@@ -34,8 +34,13 @@ except pygame.error as e:
     print(f"Warning: unable to load asteroid sounds: {e}")
 
 try:
-    laser_sound = pygame.mixer.Sound("assets/ogg/laser.ogg")
-    laser_sound.set_volume(0.25)  # Slightly quieter so it doesn't drown out asteroids
+    laser_sound_1 = pygame.mixer.Sound("assets/ogg/laser.ogg")
+    laser_sound_1.set_volume(0.20)  # Slightly quieter so it doesn't drown out asteroids
+    rapid_fire_sound = pygame.mixer.Sound("assets/ogg/rapid_fire.ogg")
+    rapid_fire_sound.set_volume(0.20)
+    laser_sound = laser_sound_1
+    shotgun_sound = pygame.mixer.Sound("assets/ogg/shotgun.ogg")
+    shotgun_sound.set_volume(0.20)
     print(f"Laser sound loaded successfully. Channel: {laser_channel}")
 except pygame.error as e:
     laser_sound = None
@@ -115,6 +120,8 @@ def main():
     Asteroid.sounds = asteroid_sounds
     Player.laser_sound = laser_sound
     Player.laser_channel = laser_channel
+    Player.rapid_fire_sound = rapid_fire_sound
+    Player.shotgun_sound = shotgun_sound
 
     # Main game loop - restarts when returning from menu
     game_running = True

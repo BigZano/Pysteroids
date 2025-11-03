@@ -7,6 +7,9 @@ from shot import Shot
 class Player(CircleShape):
     laser_sound = None
     laser_channel = None
+    rapid_fire_sound = None
+    shotgun_sound = None  # Remove the extra channel variables
+
 
     def __init__(self, x, y):
         super().__init__(x, y, PLAYER_RADIUS)
@@ -60,13 +63,13 @@ class Player(CircleShape):
                 self.shoot()
                 self.shot_timer = 0
         
-        # Fire with SPACE (independent of mouse)
+        # Fire with SPACE
         elif keys[pygame.K_SPACE] and self.shot_timer >= self.current_fire_delay():
             self.shoot()
             self.shot_timer = 0
 
     def move(self, dt):
-        forward = pygame.Vector2(0, 1).rotate(self.rotation)  #Spooky magic bullshit
+        forward = pygame.Vector2(0, 1).rotate(self.rotation)  # move forward vector
         self.position += forward * PLAYER_ACCELERATION * dt   # accelerate!
 
 
@@ -85,16 +88,28 @@ class Player(CircleShape):
 
     
     def shoot(self):
-        # Play laser sound once per shot
-        # For rapid fire: restart sound to prevent overlap
-        # For spread fire: play normally (unaffected by multiple bullets)
-        if self.laser_sound and self.laser_channel:
-            if self.powerups["rapid_fire"] > 0.0:
-                # Stop and restart for rapid fire (crisp staccato effect)
+        # Play appropriate sound based on most recently active power-up
+        if self.laser_channel:
+            rapid_active = self.powerups["rapid_fire"] > 0.0
+            spread_active = self.powerups["spread"] > 0.0
+            
+            # If both active, use whichever has MORE time left (most recent)
+            if rapid_active and spread_active:
+                if self.powerups["rapid_fire"] >= self.powerups["spread"]:
+                    if self.rapid_fire_sound:
+                        self.laser_channel.stop()
+                        self.laser_channel.play(self.rapid_fire_sound)
+                else:
+                    if self.shotgun_sound:
+                        self.laser_channel.stop()
+                        self.laser_channel.play(self.shotgun_sound)
+            elif rapid_active and self.rapid_fire_sound:
                 self.laser_channel.stop()
-                self.laser_channel.play(self.laser_sound)
-            else:
-                # Normal play for standard and spread fire
+                self.laser_channel.play(self.rapid_fire_sound)
+            elif spread_active and self.shotgun_sound:
+                self.laser_channel.stop()
+                self.laser_channel.play(self.shotgun_sound)
+            elif self.laser_sound:
                 self.laser_channel.play(self.laser_sound)
 
         # shoot straight forward by default
