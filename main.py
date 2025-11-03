@@ -7,10 +7,41 @@ from circleshape import *
 from shot import Shot
 from background import Background
 from menu import Menu
-
+from pygame import mixer
 
 pygame.init()
+mixer.init()
 
+background_playlist = [
+    "assets/ogg/Sci-Fi 1 Loop.ogg",
+    "assets/ogg/Sci-Fi 2 Loop.ogg",
+    "assets/ogg/Sci-Fi 3 Loop.ogg",
+    "assets/ogg/Sci-Fi 4 Loop.ogg",
+    "assets/ogg/Sci-Fi 5 Loop.ogg",
+    "assets/ogg/Sci-Fi 6 Loop.ogg",
+    "assets/ogg/Sci-Fi 7 Loop.ogg",
+    "assets/ogg/Sci-Fi 8 Loop.ogg",
+]
+
+MUSIC_END = pygame.USEREVENT + 1
+pygame.mixer.music.set_endevent(MUSIC_END)
+
+def play_next(loop=False):
+    global background_playlist
+    if not background_playlist:
+        if loop:
+            background_playlist = list(background_playlist)
+        else:
+            return
+    next_track = background_playlist.pop(0)
+    try:
+        pygame.mixer.music.load(next_track)
+        pygame.mixer.music.play(0, 0.0, 500) # play with fade in, set loop with play next func
+        pygame.mixer.music.set_volume(0.7) # volume
+    except pygame.error as e:
+        print(f"Warning: unable to load music '{next_track}': {e}")
+
+play_next(loop=True) # starts music loop with assets
 
 asteroids = pygame.sprite.Group()
 updatable = pygame.sprite.Group()
@@ -21,7 +52,6 @@ AsteroidField.containers = (updatable)
 bullets = pygame.sprite.Group()
 Shot.containers = (bullets, updatable, drawable)
 
-
 def reset_game():
     """reset game state"""
     asteroids.empty()
@@ -30,11 +60,17 @@ def reset_game():
     bullets.empty()
 
 
+try:
+    click_sound = pygame.mixer.Sound("assets/game_start.mp3")
+except pygame.error as e:
+    click_sound = None
+    print(f"Warning: unable to load click sound: {e}")
+    
 def main():
     screen = pygame.display.set_mode((SCREEN_WIDTH, SCREEN_HEIGHT))
     pygame.display.set_caption("Asteroids")
 
-    menu = Menu(screen)
+    menu = Menu(screen, click_sound)
     clock = pygame.time.Clock()
 
     # Main game loop - restarts when returning from menu
@@ -70,6 +106,8 @@ def main():
                 if event.type == pygame.QUIT:
                     playing = False
                     game_running = False
+                elif event.type == MUSIC_END:
+                    play_next(loop=True)
 
             keys = pygame.key.get_pressed()
             if keys[pygame.K_ESCAPE]:

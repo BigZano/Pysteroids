@@ -1,7 +1,7 @@
 import pygame
 
 class Menu:
-    def __init__(self, screen):
+    def __init__(self, screen, click_sound=None):
         self.screen = screen
         self.font = pygame.font.Font(None, 48)
         self.play_button = self.font.render("Play", True, (255, 255, 255))
@@ -10,6 +10,7 @@ class Menu:
         self.restart_button = self.font.render("Restart", True, (255, 255, 255))
         self.game_over_text = self.font.render("Game Over", True, (255, 0, 0))
         self.menu_rect = pygame.Rect(400, 200, 480, 300)
+        self.click_sound = click_sound
 
     def show_initial_menu(self):
         """Show Play/Exit menu at game start"""
@@ -55,6 +56,11 @@ class Menu:
                     # Check clicks
                     for i, button_rect in enumerate(button_rects):
                         if button_rect.collidepoint(mouse_pos):
+                            if self.click_sound:
+                                try:
+                                    self.click_sound.play()
+                                except Exception:
+                                    pass
                             if i == 0:  # First button (Play/Resume/Restart)
                                 waiting = False
                             elif i == 1:  # Exit button
