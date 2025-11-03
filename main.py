@@ -1,4 +1,5 @@
 import pygame
+import math
 from constants import *
 from player import Player
 from asteroid import Asteroid
@@ -12,6 +13,34 @@ from powerup import PowerUp
 
 pygame.init()
 mixer.init()
+# Set 32 channels and reserve specific ones for priority sounds
+pygame.mixer.set_num_channels(32)
+
+# Reserve dedicated channels for continuous/priority sounds
+laser_channel = pygame.mixer.Channel(0)      # Laser - highest priority
+music_channel = pygame.mixer.Channel(1)      # Reserved (not used, but kept free)
+# Channels 2-31 available for sound effects (asteroids, power-ups, etc.)
+
+asteroid_sounds = {}
+try:
+    asteroid_sounds["asteroid_large"] = pygame.mixer.Sound("assets/ogg/asteroid_large.ogg")
+    asteroid_sounds["asteroid_small"] = pygame.mixer.Sound("assets/ogg/asteroid_small.ogg")
+    asteroid_sounds["asteroid_medium"] = pygame.mixer.Sound("assets/ogg/asteroid_medium.ogg")
+    # Set volumes
+    asteroid_sounds["asteroid_large"].set_volume(0.4)
+    asteroid_sounds["asteroid_medium"].set_volume(0.25)
+    asteroid_sounds["asteroid_small"].set_volume(0.15)
+except pygame.error as e:
+    print(f"Warning: unable to load asteroid sounds: {e}")
+
+try:
+    laser_sound = pygame.mixer.Sound("assets/ogg/laser.ogg")
+    laser_sound.set_volume(0.25)  # Slightly quieter so it doesn't drown out asteroids
+    print(f"Laser sound loaded successfully. Channel: {laser_channel}")
+except pygame.error as e:
+    laser_sound = None
+    laser_channel = None
+    print(f"Warning: unable to load laser sound: {e}")
 
 background_music = [
     "assets/ogg/Sci-Fi 1 Loop.ogg",
@@ -33,13 +62,17 @@ def play_next(loop=False):
     if not background_playlist:
         if loop:
             background_playlist = list(background_music)
+            print("Refilled playlist")
         else:
+            print("Playlist empty, not looping")
             return
     next_track = background_playlist.pop(0)
+    print(f"Loading track: {next_track}")
     try:
         pygame.mixer.music.load(next_track)
-        pygame.mixer.music.play(0, 0.0, 500) # play with fade in, set loop with play next func
-        pygame.mixer.music.set_volume(0.7) # volume
+        pygame.mixer.music.play(0, 0.0, 500) # play with fade in
+        pygame.mixer.music.set_volume(0.5)  # Lower music volume so SFX are audible
+        print(f"Playing: {next_track}")
     except pygame.error as e:
         print(f"Warning: unable to load music '{next_track}': {e}")
 
@@ -75,8 +108,13 @@ def main():
     screen = pygame.display.set_mode((SCREEN_WIDTH, SCREEN_HEIGHT))
     pygame.display.set_caption("Asteroids")
 
-    menu = Menu(screen, click_sound)
+    menu = Menu(screen, click_sound, MUSIC_END, play_next)
     clock = pygame.time.Clock()
+
+    # Assign sounds
+    Asteroid.sounds = asteroid_sounds
+    Player.laser_sound = laser_sound
+    Player.laser_channel = laser_channel
 
     # Main game loop - restarts when returning from menu
     game_running = True
@@ -101,6 +139,7 @@ def main():
         font = pygame.font.Font(None, SCORE_FONT_SIZE)
         score = STARTING_SCORE
         next_bonus = BONUS_PLAYER_LIFE_SCORE
+        lives_gained = 0  # Track total lives gained for scroll direction
 
         dt = 0.0
         invincible_timer = 0.0
@@ -113,11 +152,16 @@ def main():
                     game_running = False
                 elif event.type == MUSIC_END:
                     play_next(loop=True)
+                elif event.type == pygame.KEYDOWN and event.key == pygame.K_ESCAPE:
+                    # Event-based pause (prevents double-trigger)
+                    menu.show_pause_menu()
+                    # Flush the clock after unpausing to prevent time jump
+                    clock.tick()  # Discard accumulated time
+                    # Continue to next frame with fresh dt
+                    dt = 0.0
 
             keys = pygame.key.get_pressed()
-            if keys[pygame.K_ESCAPE]:
-                menu.show_pause_menu()
-
+            
             updatable.update(dt)
             for pu in list(powerups):
                 if player.crash_check(pu):
@@ -164,6 +208,8 @@ def main():
                     # Bonus lives on score thresholds
                     while score >= next_bonus:
                         player.lives += 1
+                        lives_gained += 1  # Track lives gained
+                        background.set_scroll_direction(lives_gained)  # Update scroll direction
                         next_bonus += BONUS_PLAYER_LIFE_SCORE
 
             screen.fill((0, 0, 0))
@@ -205,6 +251,8 @@ def main():
 
             pygame.display.flip()
             dt = clock.tick(60) / 1000.0
+            # Cap dt to prevent huge jumps after pause or lag
+            dt = min(dt, 0.1)  # Max 100ms per frame
 
     pygame.quit()
 

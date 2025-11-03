@@ -1,7 +1,7 @@
 import pygame
 
 class Menu:
-    def __init__(self, screen, click_sound=None):
+    def __init__(self, screen, click_sound=None, music_end_event=None, play_next_func=None):
         self.screen = screen
         self.font = pygame.font.Font(None, 48)
         self.play_button = self.font.render("Play", True, (255, 255, 255))
@@ -11,6 +11,8 @@ class Menu:
         self.game_over_text = self.font.render("Game Over", True, (255, 0, 0))
         self.menu_rect = pygame.Rect(400, 200, 480, 300)
         self.click_sound = click_sound
+        self.music_end_event = music_end_event
+        self.play_next_func = play_next_func
 
     def show_initial_menu(self):
         """Show Play/Exit menu at game start"""
@@ -27,13 +29,23 @@ class Menu:
         self._show_menu("game_over", background)
 
     def _show_menu(self, menu_type, background=None):
+        
         waiting = True
+        clock = pygame.time.Clock()  # Local clock for menu
         while waiting:
             # Handle events
             for event in pygame.event.get():
                 if event.type == pygame.QUIT:
                     pygame.quit()
                     exit()
+                elif self.music_end_event and event.type == self.music_end_event:
+                    # Handle music transitions even while in menu
+                    if self.play_next_func:
+                        self.play_next_func(loop=True)
+                elif event.type == pygame.KEYDOWN and event.key == pygame.K_ESCAPE:
+                    # Allow ESC to unpause from pause menu
+                    if menu_type == "pause":
+                        waiting = False
                 elif event.type == pygame.MOUSEBUTTONDOWN and event.button == 1:
                     mouse_pos = pygame.mouse.get_pos()
                     
@@ -111,4 +123,4 @@ class Menu:
                 self.screen.blit(button, button_rects[i])
 
             pygame.display.flip()
-            pygame.time.Clock().tick(60)
+            clock.tick(60)  # Use local clock, not creating new one each frame

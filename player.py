@@ -1,14 +1,18 @@
 import pygame
+import math
 from circleshape import *
 from constants import *
 from shot import Shot
 
 class Player(CircleShape):
+    laser_sound = None
+    laser_channel = None
+
     def __init__(self, x, y):
         super().__init__(x, y, PLAYER_RADIUS)
         self.rotation = 0
         self.shot_timer = 0
-        self.powerups = {"rapid_fire": 0.0, "spread": 0.0} # initialize timers for powerups
+        self.powerups = {"rapid_fire": 0.0, "spread": 0.0}
         self.base_fire_delay = PLAYER_SHOT_COOLDOWN_DEFAULT
 
 
@@ -25,9 +29,9 @@ class Player(CircleShape):
 
     def update(self, dt):
         keys = pygame.key.get_pressed()
+        mouse_buttons = pygame.mouse.get_pressed()
         self.shot_timer += dt
 
-        # update power-up timers
         for p in self.powerups:
             self.powerups[p] = max(0.0, self.powerups[p] - dt)
 
@@ -39,7 +43,25 @@ class Player(CircleShape):
             self.rotate(dt * -1)
         if keys[pygame.K_d]:
             self.rotate(dt)
-        if keys[pygame.K_SPACE] and self.shot_timer >= self.current_fire_delay():
+        
+        # Handle mouse aiming and firing
+        if mouse_buttons[0]:  # Left mouse button held
+            # Continuously update rotation to face mouse cursor
+            mouse_x, mouse_y = pygame.mouse.get_pos()
+            dx = mouse_x - self.position.x
+            dy = mouse_y - self.position.y
+            # Calculate angle and negate for proper direction
+            # pygame's rotate() goes counter-clockwise, but our aiming needs adjustment
+            angle_to_mouse = -math.degrees(math.atan2(dx, dy))
+            self.rotation = angle_to_mouse
+            
+            # Fire at intervals
+            if self.shot_timer >= self.current_fire_delay():
+                self.shoot()
+                self.shot_timer = 0
+        
+        # Fire with SPACE (independent of mouse)
+        elif keys[pygame.K_SPACE] and self.shot_timer >= self.current_fire_delay():
             self.shoot()
             self.shot_timer = 0
 
@@ -63,6 +85,18 @@ class Player(CircleShape):
 
     
     def shoot(self):
+        # Play laser sound once per shot
+        # For rapid fire: restart sound to prevent overlap
+        # For spread fire: play normally (unaffected by multiple bullets)
+        if self.laser_sound and self.laser_channel:
+            if self.powerups["rapid_fire"] > 0.0:
+                # Stop and restart for rapid fire (crisp staccato effect)
+                self.laser_channel.stop()
+                self.laser_channel.play(self.laser_sound)
+            else:
+                # Normal play for standard and spread fire
+                self.laser_channel.play(self.laser_sound)
+
         # shoot straight forward by default
         center_angle = self.rotation
         angles = [center_angle]

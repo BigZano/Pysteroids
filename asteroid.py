@@ -5,6 +5,8 @@ from constants import *
 from powerup import PowerUp
 
 class Asteroid(CircleShape):
+    sounds = {}
+
     def __init__(self, x, y, radius):
         super().__init__(x, y, radius)
     
@@ -15,6 +17,19 @@ class Asteroid(CircleShape):
         self.position += self.velocity * dt
 
     def split(self):
+        # Play sound based on size
+        if self.sounds:
+            if self.radius <= ASTEROID_MIN_RADIUS:
+                sound = self.sounds.get("asteroid_small")
+            elif self.radius <= ASTEROID_MIN_RADIUS * 2:
+                sound = self.sounds.get("asteroid_medium")
+            else:
+                sound = self.sounds.get("asteroid_large")
+            
+            if sound:
+                sound.play()
+
+        # Drop power-up chance
         if random.random() < POWER_UP_DROP_CHANCE:
             kind = random.choice(["rapid_fire", "spread"])
             if self.velocity.length_squared() > 0:
@@ -30,7 +45,6 @@ class Asteroid(CircleShape):
         if self.radius <= ASTEROID_MIN_RADIUS:
             return
         
-        
         new_radius = self.radius - ASTEROID_MIN_RADIUS
         random_angle = random.uniform(20, 50)
         velocity1 = self.velocity.rotate(random_angle) * 1.2
@@ -43,4 +57,3 @@ class Asteroid(CircleShape):
 
 
 
-    
