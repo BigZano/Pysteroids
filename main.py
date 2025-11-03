@@ -8,11 +8,12 @@ from shot import Shot
 from background import Background
 from menu import Menu
 from pygame import mixer
+from powerup import PowerUp
 
 pygame.init()
 mixer.init()
 
-background_playlist = [
+background_music = [
     "assets/ogg/Sci-Fi 1 Loop.ogg",
     "assets/ogg/Sci-Fi 2 Loop.ogg",
     "assets/ogg/Sci-Fi 3 Loop.ogg",
@@ -22,6 +23,7 @@ background_playlist = [
     "assets/ogg/Sci-Fi 7 Loop.ogg",
     "assets/ogg/Sci-Fi 8 Loop.ogg",
 ]
+background_playlist = list(background_music)
 
 MUSIC_END = pygame.USEREVENT + 1
 pygame.mixer.music.set_endevent(MUSIC_END)
@@ -30,7 +32,7 @@ def play_next(loop=False):
     global background_playlist
     if not background_playlist:
         if loop:
-            background_playlist = list(background_playlist)
+            background_playlist = list(background_music)
         else:
             return
     next_track = background_playlist.pop(0)
@@ -46,11 +48,14 @@ play_next(loop=True) # starts music loop with assets
 asteroids = pygame.sprite.Group()
 updatable = pygame.sprite.Group()
 drawable = pygame.sprite.Group()
+powerups = pygame.sprite.Group()
 Player.containers = updatable, drawable
 Asteroid.containers = (asteroids, updatable, drawable)
 AsteroidField.containers = (updatable)
 bullets = pygame.sprite.Group()
 Shot.containers = (bullets, updatable, drawable)
+PowerUp.containers = (powerups, updatable, drawable)
+
 
 def reset_game():
     """reset game state"""
@@ -58,14 +63,14 @@ def reset_game():
     updatable.empty()
     drawable.empty()
     bullets.empty()
-
+    powerups.empty()
 
 try:
     click_sound = pygame.mixer.Sound("assets/game_start.mp3")
 except pygame.error as e:
     click_sound = None
     print(f"Warning: unable to load click sound: {e}")
-    
+
 def main():
     screen = pygame.display.set_mode((SCREEN_WIDTH, SCREEN_HEIGHT))
     pygame.display.set_caption("Asteroids")
@@ -114,6 +119,11 @@ def main():
                 menu.show_pause_menu()
 
             updatable.update(dt)
+            for pu in list(powerups):
+                if player.crash_check(pu):
+                    player.add_powerup(pu.kind)
+                    pu.kill()
+            
             background.update(dt)
 
             # Respawn invincibility timer
