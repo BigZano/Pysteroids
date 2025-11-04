@@ -17,7 +17,14 @@ class PowerUp(pygame.sprite.Sprite):
         self.t = 0.0
 
     def __build_image(self, kind):
-        base_color = (220, 60, 60) if kind == "rapid_fire" else (60, 120, 240) # red or blue
+        # Color scheme based on power-up type
+        if kind == "rapid_fire":
+            base_color = (220, 60, 60)  # Red
+        elif kind == "spread":
+            base_color = (60, 120, 240)  # Blue
+        else:
+            base_color = (150, 150, 150)  # Gray fallback
+            
         glow_outer = 8
         glow_inner = 4
         size = (POWERUP_RADIUS + glow_outer) * 2
@@ -38,9 +45,10 @@ class PowerUp(pygame.sprite.Sprite):
         if kind == "rapid_fire":
             pygame.draw.line(surf, (255, 255, 255, 230), (center - 6, center - 5), (center + 7, center - 5), 2)
             pygame.draw.line(surf, (255, 255, 255, 230), (center - 7, center + 1), (center + 5, center + 1), 2)
-        else:
+        elif kind == "spread":
             pygame.draw.line(surf, (255, 255, 255, 230), (center - 8, center + 4), (center, center - 6), 2)
             pygame.draw.line(surf, (255, 255, 255, 230), (center + 8, center + 4), (center, center - 6), 2)
+        
         return surf
     
     def update(self, dt):
@@ -69,4 +77,3 @@ class PowerUp(pygame.sprite.Sprite):
     def draw(self, screen):
         """Draw the power-up sprite on the screen"""
         screen.blit(self.image, self.rect)
-

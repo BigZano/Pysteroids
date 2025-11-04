@@ -17,6 +17,12 @@ class Player(CircleShape):
         self.shot_timer = 0
         self.powerups = {"rapid_fire": 0.0, "spread": 0.0}
         self.base_fire_delay = PLAYER_SHOT_COOLDOWN_DEFAULT
+        
+        # Dash mechanics
+        self.dash_cooldown = 0.0
+        self.dash_active = False
+        self.dash_timer = 0.0
+        self.dash_direction = pygame.Vector2(0, 0)
 
 
     def rotate(self, dt):
@@ -34,6 +40,19 @@ class Player(CircleShape):
         keys = pygame.key.get_pressed()
         mouse_buttons = pygame.mouse.get_pressed()
         self.shot_timer += dt
+
+        # Update dash
+        if self.dash_active:
+            self.dash_timer -= dt
+            if self.dash_timer <= 0:
+                self.dash_active = False
+            else:
+                # Move in dash direction
+                self.position += self.dash_direction * DASH_SPEED * dt
+        
+        # Update dash cooldown
+        if self.dash_cooldown > 0:
+            self.dash_cooldown -= dt
 
         for p in self.powerups:
             self.powerups[p] = max(0.0, self.powerups[p] - dt)
@@ -129,3 +148,29 @@ class Player(CircleShape):
             shot = Shot(position.x, position.y)
             shot.velocity = velocity
         return None
+    
+    def is_invincible_dash(self):
+        """Returns True if player is invincible due to dash"""
+        return DASH_INVINCIBILITY and self.dash_active
+    
+    def draw(self, screen):
+        # Draw dash trail if active
+        if self.dash_active:
+            # Draw motion blur trail
+            for i in range(3):
+                offset = self.dash_direction * -30 * (i + 1)
+                alpha = int(100 / (i + 1))
+                trail_pos = self.position + offset
+                
+                # Create surface for alpha blending
+                surf = pygame.Surface((self.radius * 4, self.radius * 4), pygame.SRCALPHA)
+                forward = pygame.Vector2(0, 1).rotate(self.rotation)
+                right = pygame.Vector2(0, 1).rotate(self.rotation + 90) * self.radius / 1.5
+                a = pygame.Vector2(self.radius * 2, self.radius * 2) + forward * self.radius
+                b = pygame.Vector2(self.radius * 2, self.radius * 2) - forward * self.radius - right
+                c = pygame.Vector2(self.radius * 2, self.radius * 2) - forward * self.radius + right
+                pygame.draw.polygon(surf, (100, 200, 255, alpha), [a, b, c], 2)
+                screen.blit(surf, (trail_pos.x - self.radius * 2, trail_pos.y - self.radius * 2))
+        
+        # Draw main ship
+        pygame.draw.polygon(screen, (255, 255, 255), self.triangle(), 2)

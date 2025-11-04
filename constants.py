@@ -2,6 +2,19 @@ SCREEN_WIDTH = 1280
 SCREEN_HEIGHT = 720
 STARTING_SCORE = 0
 
+def set_resolution(width, height):
+    """Update screen resolution and dependent constants"""
+    global SCREEN_WIDTH, SCREEN_HEIGHT
+    global RING_CHARGE_1_RADIUS, RING_CHARGE_2_RADIUS, RING_CHARGE_3_RADIUS
+    
+    SCREEN_WIDTH = width
+    SCREEN_HEIGHT = height
+    
+    # Update resolution-dependent constants
+    RING_CHARGE_1_RADIUS = SCREEN_WIDTH / 8 * 2  # 1/4th screen (2x)
+    RING_CHARGE_2_RADIUS = SCREEN_WIDTH / 6 * 2  # 1/3rd screen (2x)
+    RING_CHARGE_3_RADIUS = SCREEN_WIDTH / 4 * 2  # 1/2 screen (2x)
+
 PLAYER_RADIUS = 20
 PLAYER_TURN_SPEED = 300
 PLAYER_ACCELERATION = 200
@@ -29,3 +42,29 @@ POWER_UP_DROP_CHANCE = 0.33
 POWERUP_RADIUS = 15 
 
 SCORE_FONT_SIZE = 24
+
+# Boss asteroid settings
+BOSS_SPAWN_SCORE = 25000
+BOSS_RADIUS = ASTEROID_MAX_RADIUS * 1.5 * 1.5  # 1.5x larger again (2.25x total)
+BOSS_STARTING_HP = 100
+BOSS_SPEED = 56  # 80% of asteroid speed (70 * 0.8 = 56, asteroids are 40-100 speed)
+BOSS_ASTEROID_SPAWN_MODIFIER = 0.75  # 75% spawn rate while boss alive
+BOSS_LIVES_REWARD = 2
+ICE_TRAIL_DURATION = 4.0
+ICE_TRAIL_DAMAGE_COOLDOWN = 0.5  # Damage player every 0.5s while touching
+
+# Dash settings
+DASH_SPEED = 800
+DASH_DURATION = 0.15
+DASH_COOLDOWN = 10.0
+DASH_INVINCIBILITY = True  # Player is invincible during dash
+
+# Ring blast settings
+RING_CHARGE_SCORE = 15000
+RING_CHARGE_1_RADIUS = SCREEN_WIDTH / 8 * 2  # 1/4th screen (2x)
+RING_CHARGE_2_RADIUS = SCREEN_WIDTH / 6 * 2  # 1/3rd screen (2x)
+RING_CHARGE_3_RADIUS = SCREEN_WIDTH / 4 * 2  # 1/2 screen (2x)
+RING_CHARGE_1_BOSS_DAMAGE = 20
+RING_CHARGE_2_BOSS_DAMAGE = 60
+RING_CHARGE_3_BOSS_DAMAGE = 100
+RING_EXPANSION_SPEED = 1500  # pixels per second
