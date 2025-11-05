@@ -252,13 +252,14 @@ def main():
                 if bosses_spawned == 1:
                     asteroid_field.spawn_rate = asteroid_field.spawn_rate * BOSS_ASTEROID_SPAWN_MODIFIER
             
-            # Track boss defeats and restore spawn rate when all bosses are dead
+            # Track boss defeats - check if any bosses were killed this frame
             current_boss_count = len(boss_asteroids)
-            if bosses_spawned > bosses_defeated and current_boss_count < (bosses_spawned - bosses_defeated):
-                # A boss was defeated
-                bosses_defeated = bosses_spawned - current_boss_count
-                player.lives += BOSS_LIVES_REWARD
-                lives_gained += BOSS_LIVES_REWARD
+            if current_boss_count < (bosses_spawned - bosses_defeated):
+                # One or more bosses were defeated
+                num_defeated = (bosses_spawned - bosses_defeated) - current_boss_count
+                bosses_defeated += num_defeated
+                player.lives += BOSS_LIVES_REWARD * num_defeated
+                lives_gained += BOSS_LIVES_REWARD * num_defeated
                 background.set_scroll_direction(lives_gained)
                 
             # Restore normal asteroid spawn rate when all bosses are defeated

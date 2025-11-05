@@ -413,10 +413,14 @@ class Menu:
                 "rapid fire & shotgun",
                 "",
                 "Ring charges drop at",
-                "score milestones",
+                "score milestones and",
+                "power-up pickups",
                 "",
                 "Dash makes you",
-                "invincible briefly"
+                "invincible briefly",
+                "",
+                "Destroy bosses for",
+                "additional lives"
             ]
             
             tips_y = tips_y_start
