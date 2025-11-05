@@ -61,6 +61,7 @@ DASH_INVINCIBILITY = True  # Player is invincible during dash
 
 # Ring blast settings
 RING_CHARGE_SCORE = 15000
+RING_BLAST_COOLDOWN = 3.0  # Cooldown between ring blasts
 RING_CHARGE_1_RADIUS = SCREEN_WIDTH / 8 * 2  # 1/4th screen (2x)
 RING_CHARGE_2_RADIUS = SCREEN_WIDTH / 6 * 2  # 1/3rd screen (2x)
 RING_CHARGE_3_RADIUS = SCREEN_WIDTH / 4 * 2  # 1/2 screen (2x)

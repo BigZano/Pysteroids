@@ -273,6 +273,9 @@ def main():
             
             updatable.update(dt)
             
+            # Update ring blast cooldown
+            ring_manager.update(dt)
+            
             # Handle regular powerup collection
             for pu in list(powerups):
                 if player.crash_check(pu):
@@ -449,8 +452,20 @@ def main():
             
             # Ring charge indicator
             current_charges = ring_manager.get_charges()
-            ring_color = (100, 150, 255) if current_charges == 1 else (255, 100, 100) if current_charges == 2 else (255, 255, 100) if current_charges == 3 else (150, 150, 150)
-            ring_text = f"Ring: {current_charges}/3"
+            ring_cooldown = ring_manager.get_cooldown()
+            
+            # Show cooldown if active, otherwise show charge count
+            if ring_cooldown > 0:
+                ring_text = f"Ring: {ring_cooldown:.1f}s"
+                ring_color = (150, 150, 150)
+            elif current_charges > 0:
+                # Color based on charge level
+                ring_color = (100, 150, 255) if current_charges == 1 else (255, 100, 100) if current_charges == 2 else (255, 255, 100)
+                ring_text = f"Ring: {current_charges}/3 READY"
+            else:
+                ring_text = f"Ring: 0/3"
+                ring_color = (150, 150, 150)
+            
             ring_surf = font.render(ring_text, True, ring_color)
             screen.blit(ring_surf, (10, 10 + score_surf.get_height() + lives_surf.get_height() + dash_surf.get_height() + 12))
             
