@@ -142,6 +142,12 @@ def main():
     Player.laser_channel = laser_channel
     Player.rapid_fire_sound = rapid_fire_sound
     Player.shotgun_sound = shotgun_sound
+    
+    # Set sound references in menu for live volume updates
+    menu.set_sound_references(laser_sound, rapid_fire_sound, shotgun_sound, asteroid_sounds)
+    
+    # Apply initial volume settings from menu
+    menu.apply_volumes(laser_sound, rapid_fire_sound, shotgun_sound, asteroid_sounds, click_sound)
 
     # Main game loop - restarts when returning from menu
     game_running = True
@@ -151,6 +157,9 @@ def main():
         
         # Show initial menu and get selected resolution
         selected_resolution = menu.show_initial_menu(initial_background)
+        
+        # Apply volume settings after returning from menu (user may have changed them)
+        menu.apply_volumes(laser_sound, rapid_fire_sound, shotgun_sound, asteroid_sounds, click_sound)
         
         # Update resolution if changed
         if selected_resolution and selected_resolution != (const.SCREEN_WIDTH, const.SCREEN_HEIGHT):
@@ -206,6 +215,8 @@ def main():
                     if event.key == pygame.K_ESCAPE:
                         # Pause menu - pass background
                         menu.show_pause_menu(background)
+                        # Apply volume settings after returning from pause menu
+                        menu.apply_volumes(laser_sound, rapid_fire_sound, shotgun_sound, asteroid_sounds, click_sound)
                         # Update screen reference in case resolution changed
                         screen = menu.screen
                         # Flush the clock after unpausing to prevent time jump
@@ -287,6 +298,8 @@ def main():
                         lives_left = player.lives - 1
                         if lives_left < 0:
                             menu.show_game_over_menu(background)
+                            # Apply volume settings after game over
+                            menu.apply_volumes(laser_sound, rapid_fire_sound, shotgun_sound, asteroid_sounds, click_sound)
                             # Update screen reference in case resolution changed
                             screen = menu.screen
                             playing = False  # Exit to restart
@@ -313,6 +326,8 @@ def main():
                         lives_left = player.lives - 1
                         if lives_left < 0:
                             menu.show_game_over_menu(background)
+                            # Apply volume settings after game over
+                            menu.apply_volumes(laser_sound, rapid_fire_sound, shotgun_sound, asteroid_sounds, click_sound)
                             # Update screen reference in case resolution changed
                             screen = menu.screen
                             playing = False

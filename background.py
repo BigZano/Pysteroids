@@ -21,23 +21,23 @@ class Star:
         
         if scroll_direction == 0:  # Left
             self.x -= scroll_speed * dt
-            if self.x < 0:
-                self.x = constants.SCREEN_WIDTH
+            if self.x < -10:  # Small buffer to prevent edge flickering
+                self.x = constants.SCREEN_WIDTH + 10
                 self.y = random.uniform(0, constants.SCREEN_HEIGHT)
         elif scroll_direction == 1:  # Down
             self.y += scroll_speed * dt
-            if self.y > constants.SCREEN_HEIGHT:
-                self.y = 0
+            if self.y > constants.SCREEN_HEIGHT + 10:
+                self.y = -10
                 self.x = random.uniform(0, constants.SCREEN_WIDTH)
         elif scroll_direction == 2:  # Right
             self.x += scroll_speed * dt
-            if self.x > constants.SCREEN_WIDTH:
-                self.x = 0
+            if self.x > constants.SCREEN_WIDTH + 10:
+                self.x = -10
                 self.y = random.uniform(0, constants.SCREEN_HEIGHT)
         elif scroll_direction == 3:  # Up
             self.y -= scroll_speed * dt
-            if self.y < 0:
-                self.y = constants.SCREEN_HEIGHT
+            if self.y < -10:
+                self.y = constants.SCREEN_HEIGHT + 10
                 self.x = random.uniform(0, constants.SCREEN_WIDTH)
 
 
@@ -78,22 +78,22 @@ class NebulaCloud:
         if scroll_direction == 0:  # Left
             self.x -= drift
             if self.x < -self.size * 1.5:
-                self.x = constants.SCREEN_WIDTH + self.size * 1.5
+                self.x = constants.SCREEN_WIDTH + self.size
                 self.y = random.uniform(0, constants.SCREEN_HEIGHT)
         elif scroll_direction == 1:  # Down
             self.y += drift
             if self.y > constants.SCREEN_HEIGHT + self.size * 1.5:
-                self.y = -self.size * 1.5
+                self.y = -self.size
                 self.x = random.uniform(0, constants.SCREEN_WIDTH)
         elif scroll_direction == 2:  # Right
             self.x += drift
             if self.x > constants.SCREEN_WIDTH + self.size * 1.5:
-                self.x = -self.size * 1.5
+                self.x = -self.size
                 self.y = random.uniform(0, constants.SCREEN_HEIGHT)
         elif scroll_direction == 3:  # Up
             self.y -= drift
             if self.y < -self.size * 1.5:
-                self.y = constants.SCREEN_HEIGHT + self.size * 1.5
+                self.y = constants.SCREEN_HEIGHT + self.size
                 self.x = random.uniform(0, constants.SCREEN_WIDTH)
     
     def generate_surface(self, time):
