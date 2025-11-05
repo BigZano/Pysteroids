@@ -1,11 +1,13 @@
 name: Build Web Version
 
+# Disabled until async/await modifications are made
+# Web build is optional - desktop builds work fine for itch.io
 on:
-  push:
-    branches: [ main ]
-    tags:
-      - 'v*'
-  workflow_dispatch:
+  workflow_dispatch:  # Manual trigger only
+  # push:
+  #   branches: [ main ]
+  #   tags:
+  #     - 'v*'
 
 jobs:
   build-web:
