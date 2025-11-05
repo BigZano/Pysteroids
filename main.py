@@ -1,6 +1,8 @@
 import pygame
 import math
 import random
+import sys
+import os
 from constants import *
 import constants as const
 from player import Player
@@ -15,6 +17,15 @@ from powerup import PowerUp
 from bossasteroid import BossAsteroid, IceTrail
 from ringblast import RingBlast, RingChargeManager, RingChargePowerUp
 
+def resource_path(relative_path):
+    """Get absolute path to resource, works for dev and for PyInstaller"""
+    try:
+        # PyInstaller creates a temp folder and stores path in _MEIPASS
+        base_path = sys._MEIPASS
+    except Exception:
+        base_path = os.path.abspath(".")
+    return os.path.join(base_path, relative_path)
+
 pygame.init()
 mixer.init()
 # Set 32 channels and reserve specific ones for priority sounds
@@ -27,10 +38,10 @@ music_channel = pygame.mixer.Channel(1)      # Reserved (not used, but kept free
 
 asteroid_sounds = {}
 try:
-    asteroid_sounds["asteroid_large"] = pygame.mixer.Sound("assets/ogg/asteroid_large.ogg")
-    asteroid_sounds["asteroid_small"] = pygame.mixer.Sound("assets/ogg/asteroid_small.ogg")
-    asteroid_sounds["asteroid_medium"] = pygame.mixer.Sound("assets/ogg/asteroid_medium.ogg")
-    asteroid_sounds["bossteroid"] = pygame.mixer.Sound("assets/ogg/bossteroid.ogg")
+    asteroid_sounds["asteroid_large"] = pygame.mixer.Sound(resource_path("assets/ogg/asteroid_large.ogg"))
+    asteroid_sounds["asteroid_small"] = pygame.mixer.Sound(resource_path("assets/ogg/asteroid_small.ogg"))
+    asteroid_sounds["asteroid_medium"] = pygame.mixer.Sound(resource_path("assets/ogg/asteroid_medium.ogg"))
+    asteroid_sounds["bossteroid"] = pygame.mixer.Sound(resource_path("assets/ogg/bossteroid.ogg"))
     # Set volumes
     asteroid_sounds["bossteroid"].set_volume(1.0)
     asteroid_sounds["asteroid_large"].set_volume(0.4)
@@ -40,12 +51,12 @@ except pygame.error as e:
     print(f"Warning: unable to load asteroid sounds: {e}")
 
 try:
-    laser_sound_1 = pygame.mixer.Sound("assets/ogg/laser.ogg")
+    laser_sound_1 = pygame.mixer.Sound(resource_path("assets/ogg/laser.ogg"))
     laser_sound_1.set_volume(0.20)  # Slightly quieter so it doesn't drown out asteroids
-    rapid_fire_sound = pygame.mixer.Sound("assets/ogg/rapid_fire.ogg")
+    rapid_fire_sound = pygame.mixer.Sound(resource_path("assets/ogg/rapid_fire.ogg"))
     rapid_fire_sound.set_volume(0.20)
     laser_sound = laser_sound_1
-    shotgun_sound = pygame.mixer.Sound("assets/ogg/shotgun.ogg")
+    shotgun_sound = pygame.mixer.Sound(resource_path("assets/ogg/shotgun.ogg"))
     shotgun_sound.set_volume(0.70)
     print(f"Laser sound loaded successfully. Channel: {laser_channel}")
 except pygame.error as e:
@@ -54,14 +65,14 @@ except pygame.error as e:
     print(f"Warning: unable to load laser sound: {e}")
 
 background_music = [
-    "assets/ogg/Sci-Fi 1 Loop.ogg",
-    "assets/ogg/Sci-Fi 2 Loop.ogg",
-    "assets/ogg/Sci-Fi 3 Loop.ogg",
-    "assets/ogg/Sci-Fi 4 Loop.ogg",
-    "assets/ogg/Sci-Fi 5 Loop.ogg",
-    "assets/ogg/Sci-Fi 6 Loop.ogg",
-    "assets/ogg/Sci-Fi 7 Loop.ogg",
-    "assets/ogg/Sci-Fi 8 Loop.ogg",
+    resource_path("assets/ogg/Sci-Fi 1 Loop.ogg"),
+    resource_path("assets/ogg/Sci-Fi 2 Loop.ogg"),
+    resource_path("assets/ogg/Sci-Fi 3 Loop.ogg"),
+    resource_path("assets/ogg/Sci-Fi 4 Loop.ogg"),
+    resource_path("assets/ogg/Sci-Fi 5 Loop.ogg"),
+    resource_path("assets/ogg/Sci-Fi 6 Loop.ogg"),
+    resource_path("assets/ogg/Sci-Fi 7 Loop.ogg"),
+    resource_path("assets/ogg/Sci-Fi 8 Loop.ogg"),
 ]
 background_playlist = list(background_music)
 
@@ -123,7 +134,7 @@ def reset_game():
     boss_asteroids.empty()
 
 try:
-    click_sound = pygame.mixer.Sound("assets/game_start.mp3")
+    click_sound = pygame.mixer.Sound(resource_path("assets/game_start.mp3"))
 except pygame.error as e:
     click_sound = None
     print(f"Warning: unable to load click sound: {e}")
