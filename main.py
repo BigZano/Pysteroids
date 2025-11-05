@@ -189,8 +189,8 @@ def main():
 
         # Boss tracking
         bosses_defeated = 0
+        bosses_spawned = 0
         next_boss_score = BOSS_SPAWN_SCORE
-        current_boss = None
         
         # Ring blast tracking - using RingChargeManager
         ring_manager = RingChargeManager()
@@ -240,26 +240,30 @@ def main():
 
             keys = pygame.key.get_pressed()
             
-            # Boss spawning
-            if score >= next_boss_score and len(boss_asteroids) == 0:
-                current_boss = BossAsteroid(bosses_defeated)
+            # Boss spawning - spawn all bosses due based on score
+            while score >= next_boss_score:
+                BossAsteroid(bosses_spawned)
+                bosses_spawned += 1
                 next_boss_score += BOSS_SPAWN_SCORE
                 # Play boss spawn sound
                 if asteroid_sounds.get("bossteroid"):
                     asteroid_sounds["bossteroid"].play()
-                # Modify asteroid spawn rate while boss is active
-                asteroid_field.spawn_rate = asteroid_field.spawn_rate * BOSS_ASTEROID_SPAWN_MODIFIER
+                # Modify asteroid spawn rate when first boss spawns
+                if bosses_spawned == 1:
+                    asteroid_field.spawn_rate = asteroid_field.spawn_rate * BOSS_ASTEROID_SPAWN_MODIFIER
             
-            # Check if boss is defeated
-            if current_boss is not None and current_boss not in boss_asteroids:
-                # Boss was defeated
-                bosses_defeated += 1
+            # Track boss defeats and restore spawn rate when all bosses are dead
+            current_boss_count = len(boss_asteroids)
+            if bosses_spawned > bosses_defeated and current_boss_count < (bosses_spawned - bosses_defeated):
+                # A boss was defeated
+                bosses_defeated = bosses_spawned - current_boss_count
                 player.lives += BOSS_LIVES_REWARD
                 lives_gained += BOSS_LIVES_REWARD
                 background.set_scroll_direction(lives_gained)
-                # Restore normal asteroid spawn rate
-                asteroid_field.spawn_rate = asteroid_field.spawn_rate / BOSS_ASTEROID_SPAWN_MODIFIER
-                current_boss = None
+                
+            # Restore normal asteroid spawn rate when all bosses are defeated
+            if bosses_spawned > 0 and current_boss_count == 0 and asteroid_field.spawn_rate < ASTEROID_SPAWN_RATE:
+                asteroid_field.spawn_rate = ASTEROID_SPAWN_RATE
             
             # Ring charge accumulation - drop ring charge powerups at score thresholds
             while score >= next_ring_charge_score:
@@ -437,8 +441,10 @@ def main():
             # HUD
             score_surf = font.render(f"Score: {score}", True, (200, 200, 220))
             lives_surf = font.render(f"Lives: {player.lives}", True, (200, 200, 220))
+            bosses_surf = font.render(f"Bosses: {bosses_defeated}", True, (255, 200, 100))
             screen.blit(score_surf, (10, 10))
             screen.blit(lives_surf, (10, 10 + score_surf.get_height() + 4))
+            screen.blit(bosses_surf, (10, 10 + score_surf.get_height() + lives_surf.get_height() + 8))
             
             # Dash cooldown indicator
             if player.dash_cooldown > 0:
@@ -448,7 +454,7 @@ def main():
                 dash_text = "Dash: READY"
                 dash_color = (100, 255, 100)
             dash_surf = font.render(dash_text, True, dash_color)
-            screen.blit(dash_surf, (10, 10 + score_surf.get_height() + lives_surf.get_height() + 8))
+            screen.blit(dash_surf, (10, 10 + score_surf.get_height() + lives_surf.get_height() + bosses_surf.get_height() + 12))
             
             # Ring charge indicator
             current_charges = ring_manager.get_charges()
@@ -467,31 +473,34 @@ def main():
                 ring_color = (150, 150, 150)
             
             ring_surf = font.render(ring_text, True, ring_color)
-            screen.blit(ring_surf, (10, 10 + score_surf.get_height() + lives_surf.get_height() + dash_surf.get_height() + 12))
+            screen.blit(ring_surf, (10, 10 + score_surf.get_height() + lives_surf.get_height() + bosses_surf.get_height() + dash_surf.get_height() + 16))
             
-            # Boss HP bar at top center
-            if current_boss is not None and current_boss in boss_asteroids:
+            # Boss HP bar(s) at top center - show all active bosses
+            if len(boss_asteroids) > 0:
                 bar_width = 300
                 bar_height = 20
-                bar_x = const.SCREEN_WIDTH // 2 - bar_width // 2
-                bar_y = 10
+                bar_spacing = 30
                 
-                # Background
-                pygame.draw.rect(screen, (50, 50, 50), (bar_x, bar_y, bar_width, bar_height))
-                
-                # HP bar
-                hp_percentage = current_boss.hp / current_boss.max_hp
-                pygame.draw.rect(screen, (255, 50, 50), (bar_x, bar_y, bar_width * hp_percentage, bar_height))
-                
-                # Border
-                pygame.draw.rect(screen, (255, 255, 255), (bar_x, bar_y, bar_width, bar_height), 2)
-                
-                # Text
-                boss_text = f"BOSS: {current_boss.hp}/{current_boss.max_hp} HP"
-                boss_surf = font.render(boss_text, True, (255, 255, 255))
-                text_x = const.SCREEN_WIDTH // 2 - boss_surf.get_width() // 2
-                text_y = bar_y + bar_height + 4
-                screen.blit(boss_surf, (text_x, text_y))
+                for idx, boss in enumerate(boss_asteroids):
+                    bar_x = const.SCREEN_WIDTH // 2 - bar_width // 2
+                    bar_y = 10 + idx * bar_spacing
+                    
+                    # Background
+                    pygame.draw.rect(screen, (50, 50, 50), (bar_x, bar_y, bar_width, bar_height))
+                    
+                    # HP bar
+                    hp_percentage = boss.hp / boss.max_hp
+                    pygame.draw.rect(screen, (255, 50, 50), (bar_x, bar_y, bar_width * hp_percentage, bar_height))
+                    
+                    # Border
+                    pygame.draw.rect(screen, (255, 255, 255), (bar_x, bar_y, bar_width, bar_height), 2)
+                    
+                    # Text
+                    boss_text = f"BOSS {boss.boss_number + 1}: {boss.hp}/{boss.max_hp} HP"
+                    boss_surf = font.render(boss_text, True, (255, 255, 255))
+                    text_x = const.SCREEN_WIDTH // 2 - boss_surf.get_width() // 2
+                    text_y = bar_y + bar_height + 4
+                    screen.blit(boss_surf, (text_x, text_y))
 
             pygame.display.flip()
             dt = clock.tick(60) / 1000.0

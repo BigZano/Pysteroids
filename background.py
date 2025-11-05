@@ -16,28 +16,28 @@ class Star:
         self.twinkle_speed = random.uniform(1.5, 3.0)
 
     def update(self, dt, scroll_direction):
-        # Scroll based on direction (0=left, 1=down, 2=right, 3=up)
-        scroll_speed = 15 * self.layer  # Faster for closer stars (parallax)
+        """Update star position with parallax scrolling"""
+        scroll_speed = 15 * self.layer
         
-        if scroll_direction == 0:  # Left
-            self.x -= scroll_speed * dt
-            if self.x < -10:  # Small buffer to prevent edge flickering
-                self.x = constants.SCREEN_WIDTH + 10
+        # Direction-based scrolling with wrapping
+        directions = [
+            (-scroll_speed, 0, -10, constants.SCREEN_WIDTH + 10, 'x', 'y'),  # Left
+            (0, scroll_speed, constants.SCREEN_HEIGHT + 10, -10, 'y', 'x'),  # Down
+            (scroll_speed, 0, constants.SCREEN_WIDTH + 10, -10, 'x', 'y'),   # Right
+            (0, -scroll_speed, -10, constants.SCREEN_HEIGHT + 10, 'y', 'x')  # Up
+        ]
+        
+        if 0 <= scroll_direction < 4:
+            dx, dy, edge_check, wrap_pos, primary_axis, secondary_axis = directions[scroll_direction]
+            self.x += dx * dt
+            self.y += dy * dt
+            
+            # Wrap around screen
+            if (dx < 0 and self.x < -10) or (dx > 0 and self.x > constants.SCREEN_WIDTH + 10):
+                self.x = wrap_pos
                 self.y = random.uniform(0, constants.SCREEN_HEIGHT)
-        elif scroll_direction == 1:  # Down
-            self.y += scroll_speed * dt
-            if self.y > constants.SCREEN_HEIGHT + 10:
-                self.y = -10
-                self.x = random.uniform(0, constants.SCREEN_WIDTH)
-        elif scroll_direction == 2:  # Right
-            self.x += scroll_speed * dt
-            if self.x > constants.SCREEN_WIDTH + 10:
-                self.x = -10
-                self.y = random.uniform(0, constants.SCREEN_HEIGHT)
-        elif scroll_direction == 3:  # Up
-            self.y -= scroll_speed * dt
-            if self.y < -10:
-                self.y = constants.SCREEN_HEIGHT + 10
+            elif (dy < 0 and self.y < -10) or (dy > 0 and self.y > constants.SCREEN_HEIGHT + 10):
+                self.y = wrap_pos
                 self.x = random.uniform(0, constants.SCREEN_WIDTH)
 
 
@@ -72,73 +72,58 @@ class NebulaCloud:
         self.last_generated_time = -999
 
     def update(self, dt, scroll_direction):
-        # Drift slower than stars (lazy drift)
+        """Update nebula position with lazy drift"""
         drift = self.drift_speed * dt
+        buffer = self.size
         
+        # Direction-based drift with wrapping
         if scroll_direction == 0:  # Left
             self.x -= drift
-            if self.x < -self.size * 1.5:
-                self.x = constants.SCREEN_WIDTH + self.size
+            if self.x < -buffer:
+                self.x = constants.SCREEN_WIDTH + buffer
                 self.y = random.uniform(0, constants.SCREEN_HEIGHT)
         elif scroll_direction == 1:  # Down
             self.y += drift
-            if self.y > constants.SCREEN_HEIGHT + self.size * 1.5:
-                self.y = -self.size
+            if self.y > constants.SCREEN_HEIGHT + buffer:
+                self.y = -buffer
                 self.x = random.uniform(0, constants.SCREEN_WIDTH)
         elif scroll_direction == 2:  # Right
             self.x += drift
-            if self.x > constants.SCREEN_WIDTH + self.size * 1.5:
-                self.x = -self.size
+            if self.x > constants.SCREEN_WIDTH + buffer:
+                self.x = -buffer
                 self.y = random.uniform(0, constants.SCREEN_HEIGHT)
         elif scroll_direction == 3:  # Up
             self.y -= drift
-            if self.y < -self.size * 1.5:
-                self.y = constants.SCREEN_HEIGHT + self.size
+            if self.y < -buffer:
+                self.y = constants.SCREEN_HEIGHT + buffer
                 self.x = random.uniform(0, constants.SCREEN_WIDTH)
     
     def generate_surface(self, time):
         """Generate nebula surface using noise and overlapping circles"""
         surf_size = int(self.size * 3)
         surf = pygame.Surface((surf_size, surf_size), pygame.SRCALPHA)
-        
-        scale = 0.03  # Larger, more spread out clouds
-        
-        # Pulsing effect (subtle)
         pulse = 0.85 + 0.15 * math.sin(time * self.pulse_speed + self.time_offset)
-        
-        center_x = surf_size // 2
-        center_y = surf_size // 2
+        center = surf_size // 2
         
         # Draw base cloud using noise-based circles
-        num_blobs = 8  # Number of blob circles to create organic shape
+        num_blobs = 8
         for blob in range(num_blobs):
-            # Use noise to determine blob position and size
-            angle = (360 / num_blobs) * blob + time * 10
             noise_x = pnoise2(blob * 0.5 + self.noise_offset_x, time * 0.1, octaves=2) * self.size * 0.4
             noise_y = pnoise2(blob * 0.5 + self.noise_offset_y, time * 0.1 + 100, octaves=2) * self.size * 0.4
             
-            blob_x = center_x + noise_x
-            blob_y = center_y + noise_y
+            blob_pos = (center + noise_x, center + noise_y)
             blob_radius = self.size * random.uniform(0.4, 0.7) * pulse
             
-            # Layer 1: Outer glow (primary color)
-            for layer_i in range(3):
-                if layer_i == 0:
-                    color = self.color
-                    layer_alpha = int(self.alpha * 0.3)
-                    layer_radius = blob_radius * 1.2
-                elif layer_i == 1:
-                    color = self.secondary_color
-                    layer_alpha = int(self.alpha * 0.5)
-                    layer_radius = blob_radius * 0.9
-                else:
-                    # Mix colors
-                    color = tuple((c1 + c2) // 2 for c1, c2 in zip(self.color, self.secondary_color))
-                    layer_alpha = int(self.alpha * 0.7)
-                    layer_radius = blob_radius * 0.6
-                
-                pygame.draw.circle(surf, (*color, layer_alpha), 
-                                 (int(blob_x), int(blob_y)), int(layer_radius))
+            # Layer colors and alphas
+            layers = [
+                (self.color, int(self.alpha * 0.3), blob_radius * 1.2),
+                (self.secondary_color, int(self.alpha * 0.5), blob_radius * 0.9),
+                (tuple((c1 + c2) // 2 for c1, c2 in zip(self.color, self.secondary_color)), 
+                 int(self.alpha * 0.7), blob_radius * 0.6)
+            ]
+            
+            for color, alpha, radius in layers:
+                pygame.draw.circle(surf, (*color, alpha), (int(blob_pos[0]), int(blob_pos[1])), int(radius))
         
         return surf
 
@@ -153,7 +138,7 @@ class Background:
         for _ in range(25):
             self.stars.append(Star(3))
         
-        self.nebulae = [NebulaCloud() for _ in range(5)]
+        self.nebulae = [NebulaCloud() for _ in range(12)]  # Increased from 5 to 12
         self.time = 0
         self.scroll_direction = 0  # 0=left, 1=down, 2=right, 3=up
 

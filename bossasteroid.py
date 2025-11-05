@@ -51,41 +51,30 @@ class IceTrail(pygame.sprite.Sprite):
         screen.blit(surf, (int(self.position.x - self.radius), int(self.position.y - self.radius)))
 
 class BossAsteroid(CircleShape):
+    """Large boss asteroid with ice trail and scaling HP"""
     sounds = {}
     
     def __init__(self, boss_number):
         # Calculate HP with cumulative square root growth
-        # Boss 0: 100
-        # Boss 1: 100 + sqrt(100) = 110
-        # Boss 2: 110 + sqrt(110) = ~120.5
-        # Boss 3: 120.5 + sqrt(120.5) = ~131.5, etc.
-        
         hp = BOSS_STARTING_HP
-        for i in range(boss_number):
-            hp = hp + math.sqrt(hp)
-        hp = int(hp)  # Convert to integer
+        for _ in range(boss_number):
+            hp = int(hp + math.sqrt(hp))
         
-        # Random edge spawn
-        edge = random.choice([0, 1, 2, 3])  # left, right, top, bottom
-        if edge == 0:  # left
-            x, y = -BOSS_RADIUS, random.uniform(0, SCREEN_HEIGHT)
-            velocity = pygame.Vector2(1, 0)
-        elif edge == 1:  # right
-            x, y = SCREEN_WIDTH + BOSS_RADIUS, random.uniform(0, SCREEN_HEIGHT)
-            velocity = pygame.Vector2(-1, 0)
-        elif edge == 2:  # top
-            x, y = random.uniform(0, SCREEN_WIDTH), -BOSS_RADIUS
-            velocity = pygame.Vector2(0, 1)
-        else:  # bottom
-            x, y = random.uniform(0, SCREEN_WIDTH), SCREEN_HEIGHT + BOSS_RADIUS
-            velocity = pygame.Vector2(0, -1)
+        # Spawn from random edge
+        edges = [
+            (-BOSS_RADIUS, random.uniform(0, SCREEN_HEIGHT), pygame.Vector2(1, 0)),  # Left
+            (SCREEN_WIDTH + BOSS_RADIUS, random.uniform(0, SCREEN_HEIGHT), pygame.Vector2(-1, 0)),  # Right
+            (random.uniform(0, SCREEN_WIDTH), -BOSS_RADIUS, pygame.Vector2(0, 1)),  # Top
+            (random.uniform(0, SCREEN_WIDTH), SCREEN_HEIGHT + BOSS_RADIUS, pygame.Vector2(0, -1))  # Bottom
+        ]
+        x, y, direction = random.choice(edges)
             
         super().__init__(x, y, BOSS_RADIUS)
         self.hp = hp
         self.max_hp = hp
-        self.velocity = velocity.rotate(random.uniform(-15, 15)) * BOSS_SPEED
+        self.velocity = direction.rotate(random.uniform(-15, 15)) * BOSS_SPEED
         self.trail_timer = 0.0
-        self.trail_interval = 0.3  # Leave trail every 0.3 seconds
+        self.trail_interval = 0.3
         self.boss_number = boss_number
         
     def take_damage(self, damage):
@@ -96,35 +85,21 @@ class BossAsteroid(CircleShape):
     def update(self, dt):
         self.position += self.velocity * dt
         
-        # Screen wrap - change direction on edge to ensure boss moves toward screen
+        # Screen wrap with direction change
         margin = BOSS_RADIUS + 10
+        
+        # Horizontal wrapping
         if self.position.x < -margin or self.position.x > SCREEN_WIDTH + margin:
-            # Re-enter from opposite side with new direction pointing toward screen center
-            if self.position.x < -margin:
-                self.position.x = SCREEN_WIDTH + margin
-                # Point generally toward left side of screen (270 to 90 degrees, excluding extreme angles)
-                angle = random.uniform(-60, 60)  # -60 to 60 from straight left
-                direction = pygame.Vector2(-1, 0).rotate(angle)
-            else:
-                self.position.x = -margin
-                # Point generally toward right side of screen
-                angle = random.uniform(-60, 60)  # -60 to 60 from straight right
-                direction = pygame.Vector2(1, 0).rotate(angle)
-            self.velocity = direction * BOSS_SPEED
-            
+            self.position.x = SCREEN_WIDTH + margin if self.position.x < -margin else -margin
+            direction = pygame.Vector2(-1, 0) if self.position.x > SCREEN_WIDTH else pygame.Vector2(1, 0)
+            self.velocity = direction.rotate(random.uniform(-60, 60)) * BOSS_SPEED
+        
+        # Vertical wrapping
         if self.position.y < -margin or self.position.y > SCREEN_HEIGHT + margin:
-            if self.position.y < -margin:
-                self.position.y = SCREEN_HEIGHT + margin
-                # Point generally toward top of screen
-                angle = random.uniform(-60, 60)  # -60 to 60 from straight down
-                direction = pygame.Vector2(0, 1).rotate(angle)
-            else:
-                self.position.y = -margin
-                # Point generally toward bottom of screen
-                angle = random.uniform(-60, 60)  # -60 to 60 from straight up
-                direction = pygame.Vector2(0, -1).rotate(angle)
-            self.velocity = direction * BOSS_SPEED
-            
+            self.position.y = SCREEN_HEIGHT + margin if self.position.y < -margin else -margin
+            direction = pygame.Vector2(0, 1) if self.position.y > SCREEN_HEIGHT else pygame.Vector2(0, -1)
+            self.velocity = direction.rotate(random.uniform(-60, 60)) * BOSS_SPEED
+        
         # Leave ice trail
         self.trail_timer += dt
         if self.trail_timer >= self.trail_interval:
@@ -148,24 +123,22 @@ class BossAsteroid(CircleShape):
         screen.blit(surf, (int(self.position.x - self.radius * 1.25), int(self.position.y - self.radius * 1.25)))
         
     def split(self):
-        # Play boss asteroid sound
+        """Destroy boss and drop powerups"""
+        # Play boss destruction sound
         if self.sounds:
             sound = self.sounds.get("bossteroid")
             if sound:
                 sound.play()
-                
-        # Drop power-ups (bosses drop more ring charges)
-        for _ in range(3):  # Drop 3 power-ups
-            kind = random.choice(["rapid_fire", "spread", "ring_charge", "ring_charge"])  # Higher chance for ring charges
-            angle = random.uniform(0, 360)
-            dir_vec = pygame.Vector2(1, 0).rotate(angle)
-            speed = random.uniform(60, 120)
-            vel = dir_vec * speed
+        
+        # Drop 3 powerups with higher ring charge chance
+        for _ in range(3):
+            kind = random.choice(["rapid_fire", "spread", "ring_charge", "ring_charge"])
+            direction = pygame.Vector2(1, 0).rotate(random.uniform(0, 360))
+            vel = direction * random.uniform(60, 120)
             
-            # Spawn appropriate powerup type
             if kind == "ring_charge":
                 RingChargePowerUp(self.position.x, self.position.y, vel)
             else:
                 PowerUp(self.position.x, self.position.y, kind, vel)
-            
+        
         self.kill()

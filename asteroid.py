@@ -7,41 +7,33 @@ from powerup import PowerUp
 from ringblast import RingChargePowerUp
 
 class Asteroid(CircleShape):
+    """Jagged asteroid with random shape and rotation"""
     sounds = {}
 
     def __init__(self, x, y, radius):
         super().__init__(x, y, radius)
         
         # Generate random jagged shape
-        self.num_vertices = random.randint(8, 14)  # More vertices = more detail
+        self.num_vertices = random.randint(8, 14)
         self.vertices = []
         self.rotation = random.uniform(0, 360)
-        self.rotation_speed = random.uniform(-30, 30)  # degrees per second
+        self.rotation_speed = random.uniform(-30, 30)
         
         # Generate vertices with random distance variations
         for i in range(self.num_vertices):
             angle = (360 / self.num_vertices) * i
-            # Vary the distance from center (70% to 100% of radius)
-            distance_variation = random.uniform(0.7, 1.0)
-            distance = radius * distance_variation
-            
-            # Convert polar to cartesian
+            distance = radius * random.uniform(0.7, 1.0)
             rad = math.radians(angle)
-            x_offset = distance * math.cos(rad)
-            y_offset = distance * math.sin(rad)
-            self.vertices.append(pygame.Vector2(x_offset, y_offset))
+            offset = pygame.Vector2(distance * math.cos(rad), distance * math.sin(rad))
+            self.vertices.append(offset)
         
-        # Add small craters (indentations) occasionally
+        # Add craters for detail
         self.craters = []
-        num_craters = random.randint(0, 3)
-        for _ in range(num_craters):
-            crater_angle = random.uniform(0, 360)
-            crater_distance = random.uniform(0.5, 0.8) * radius
-            crater_size = random.uniform(0.1, 0.2) * radius
+        for _ in range(random.randint(0, 3)):
             self.craters.append({
-                'angle': crater_angle,
-                'distance': crater_distance,
-                'size': crater_size
+                'angle': random.uniform(0, 360),
+                'distance': random.uniform(0.5, 0.8) * radius,
+                'size': random.uniform(0.1, 0.2) * radius
             })
     
     def draw(self, screen):
@@ -69,32 +61,28 @@ class Asteroid(CircleShape):
         self.rotation += self.rotation_speed * dt
 
     def split(self):
-        # Play sound based on size
+        """Split asteroid and potentially drop powerups"""
+        # Play size-appropriate sound
         if self.sounds:
-            if self.radius <= ASTEROID_MIN_RADIUS:
-                sound = self.sounds.get("asteroid_small")
-            elif self.radius <= ASTEROID_MIN_RADIUS * 2:
-                sound = self.sounds.get("asteroid_medium")
-            else:
-                sound = self.sounds.get("asteroid_large")
-            
+            sound_key = "asteroid_small" if self.radius <= ASTEROID_MIN_RADIUS else \
+                       "asteroid_medium" if self.radius <= ASTEROID_MIN_RADIUS * 2 else \
+                       "asteroid_large"
+            sound = self.sounds.get(sound_key)
             if sound:
                 sound.play()
 
-        # Drop power-up chance
+        # Drop powerup with configured chance
         if random.random() < POWER_UP_DROP_CHANCE:
-            # Choose powerup type (ring charges are rarer)
-            powerup_types = ["rapid_fire", "spread", "rapid_fire", "spread", "ring_charge"]
-            kind = random.choice(powerup_types)
+            kind = random.choice(["rapid_fire", "spread", "rapid_fire", "spread", "ring_charge"])
             
+            # Calculate powerup velocity
             if self.velocity.length_squared() > 0:
-                dir_vec = self.velocity.normalize()
+                direction = self.velocity.normalize()
             else:
-                dir_vec = pygame.Vector2(1, 0).rotate(random.uniform(0, 360))
-            speed = 80.0
-            vel = dir_vec * speed
+                direction = pygame.Vector2(1, 0).rotate(random.uniform(0, 360))
+            vel = direction * 80.0
             
-            # Spawn appropriate powerup type
+            # Spawn powerup
             if kind == "ring_charge":
                 RingChargePowerUp(self.position.x, self.position.y, vel)
             else:
@@ -102,18 +90,14 @@ class Asteroid(CircleShape):
 
         self.kill()
 
-        if self.radius <= ASTEROID_MIN_RADIUS:
-            return
-        
-        new_radius = self.radius - ASTEROID_MIN_RADIUS
-        random_angle = random.uniform(20, 50)
-        velocity1 = self.velocity.rotate(random_angle) * 1.2
-        velocity2 = self.velocity.rotate(-random_angle) * 1.2
-
-        asteroid1 = Asteroid(self.position.x, self.position.y, new_radius)
-        asteroid2 = Asteroid(self.position.x, self.position.y, new_radius)
-        asteroid1.velocity = velocity1
-        asteroid2.velocity = velocity2
+        # Split into smaller asteroids if not minimum size
+        if self.radius > ASTEROID_MIN_RADIUS:
+            new_radius = self.radius - ASTEROID_MIN_RADIUS
+            split_angle = random.uniform(20, 50)
+            
+            for angle_sign in [1, -1]:
+                asteroid = Asteroid(self.position.x, self.position.y, new_radius)
+                asteroid.velocity = self.velocity.rotate(split_angle * angle_sign) * 1.2
 
 
 
