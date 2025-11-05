@@ -1,6 +1,55 @@
-__pycache__/*.*
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.Python
 
-env/*.*
+# Virtual environment
+env/
+venv/
+ENV/
+env.bak/
+venv.bak/
 
-Sci-Fi Music Pack.zip
+# PyInstaller
+build/
+dist/
+*.spec.backup
+
+# Backup files
 *.py.backup
+*.backup
+
+# Large asset files (optional - comment out if you want to include them)
+Sci-Fi Music Pack.zip
+
+# OS files
+.DS_Store
+Thumbs.db
+*.swp
+*.swo
+*~
+
+# IDE
+.vscode/
+.idea/
+*.sublime-project
+*.sublime-workspace
+
+# Git
+.git/
+
+# Don't ignore workflow files
+!.github/workflows/
+
+# Developer instruction files (not needed in repo)
+build_instructions.md
+QUICKSTART.md
+setup_runner.sh
+.github/CICD_GUIDE.md
+
+# Build scripts (users can get from releases or use CI/CD)
+build_linux.sh
+build_macos.sh
+build_windows.bat
+build_web.sh

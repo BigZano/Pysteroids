@@ -1,0 +1,50 @@
+name: Build Web Version
+
+on:
+  push:
+    branches: [ main ]
+    tags:
+      - 'v*'
+  workflow_dispatch:
+
+jobs:
+  build-web:
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+    
+    - name: Set up Python
+      uses: actions/setup-python@v5
+      with:
+        python-version: '3.10'
+    
+    - name: Install dependencies
+      run: |
+        python -m pip install --upgrade pip
+        pip install pygbag
+    
+    - name: Build web version
+      run: |
+        python -m pygbag --build main.py
+    
+    - name: Create web ZIP
+      run: |
+        cd build/web
+        zip -r ../../Pysteroids-Web.zip .
+    
+    - name: Upload web artifact
+      uses: actions/upload-artifact@v4
+      with:
+        name: Pysteroids-Web
+        path: Pysteroids-Web.zip
+        retention-days: 30
+    
+    - name: Deploy to GitHub Pages (optional)
+      if: github.ref == 'refs/heads/main'
+      uses: peaceiris/actions-gh-pages@v3
+      with:
+        github_token: ${{ secrets.GITHUB_TOKEN }}
+        publish_dir: ./build/web
+        publish_branch: gh-pages
