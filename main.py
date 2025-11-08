@@ -34,7 +34,8 @@ pygame.mixer.set_num_channels(32)
 # Reserve dedicated channels for continuous/priority sounds
 laser_channel = pygame.mixer.Channel(0)      # Laser - highest priority
 music_channel = pygame.mixer.Channel(1)      # Reserved (not used, but kept free)
-# Channels 2-31 available for sound effects (asteroids, power-ups, etc.)
+boss_channel = pygame.mixer.Channel(2)       # Boss sounds - high priority
+# Channels 3-31 available for sound effects (asteroids, power-ups, etc.)
 
 asteroid_sounds = {}
 try:
@@ -48,7 +49,7 @@ try:
     asteroid_sounds["asteroid_medium"].set_volume(0.25)
     asteroid_sounds["asteroid_small"].set_volume(0.15)
 except pygame.error as e:
-    print(f"Warning: unable to load asteroid sounds: {e}")
+    pass
 
 try:
     laser_sound_1 = pygame.mixer.Sound(resource_path("assets/ogg/laser.ogg"))
@@ -58,11 +59,9 @@ try:
     laser_sound = laser_sound_1
     shotgun_sound = pygame.mixer.Sound(resource_path("assets/ogg/shotgun.ogg"))
     shotgun_sound.set_volume(0.70)
-    print(f"Laser sound loaded successfully. Channel: {laser_channel}")
 except pygame.error as e:
     laser_sound = None
     laser_channel = None
-    print(f"Warning: unable to load laser sound: {e}")
 
 background_music = [
     resource_path("assets/ogg/Sci-Fi 1 Loop.ogg"),
@@ -84,19 +83,15 @@ def play_next(loop=False):
     if not background_playlist:
         if loop:
             background_playlist = list(background_music)
-            print("Refilled playlist")
         else:
-            print("Playlist empty, not looping")
             return
     next_track = background_playlist.pop(0)
-    print(f"Loading track: {next_track}")
     try:
         pygame.mixer.music.load(next_track)
         pygame.mixer.music.play(0, 0.0, 500) # play with fade in
         pygame.mixer.music.set_volume(0.5)  # Lower music volume so SFX are audible
-        print(f"Playing: {next_track}")
     except pygame.error as e:
-        print(f"Warning: unable to load music '{next_track}': {e}")
+        pass
 
 play_next(loop=True) # starts music loop with assets
 
@@ -137,7 +132,6 @@ try:
     click_sound = pygame.mixer.Sound(resource_path("assets/game_start.mp3"))
 except pygame.error as e:
     click_sound = None
-    print(f"Warning: unable to load click sound: {e}")
 
 def main():
     screen = pygame.display.set_mode((const.SCREEN_WIDTH, const.SCREEN_HEIGHT))
@@ -149,6 +143,7 @@ def main():
     # Assign sounds
     Asteroid.sounds = asteroid_sounds
     BossAsteroid.sounds = asteroid_sounds
+    BossAsteroid.boss_channel = boss_channel
     Player.laser_sound = laser_sound
     Player.laser_channel = laser_channel
     Player.rapid_fire_sound = rapid_fire_sound
@@ -182,9 +177,12 @@ def main():
         # Reset everything for new game
         reset_game()
 
+        # Setup game state
         print(f"""Starting Asteroids!
               Screen width: {const.SCREEN_WIDTH}
               Screen height: {const.SCREEN_HEIGHT}""")
+
+        # Create game objects
 
         # Create game objects
         asteroid_field = AsteroidField()
@@ -251,31 +249,94 @@ def main():
 
             keys = pygame.key.get_pressed()
             
-            # Boss spawning - spawn all bosses due based on score
-            while score >= next_boss_score:
-                BossAsteroid(bosses_spawned)
-                bosses_spawned += 1
-                next_boss_score += BOSS_SPAWN_SCORE
-                # Play boss spawn sound
-                if asteroid_sounds.get("bossteroid"):
-                    asteroid_sounds["bossteroid"].play()
-                # Modify asteroid spawn rate when first boss spawns
-                if bosses_spawned == 1:
-                    asteroid_field.spawn_rate = asteroid_field.spawn_rate * BOSS_ASTEROID_SPAWN_MODIFIER
+            # Boss spawning - spawn all bosses due based on score with robustness
+            spawn_attempts = 0
+            max_spawn_attempts = 5  # Prevent infinite loops
+            while score >= next_boss_score and spawn_attempts < max_spawn_attempts:
+                spawn_attempts += 1
+                try:
+                    # Validate boss spawn parameters
+                    if bosses_spawned < 0:
+                        bosses_spawned = 0
+                    
+                    # Limit total number of concurrent bosses for performance
+                    max_concurrent_bosses = 3
+                    if len(boss_asteroids) >= max_concurrent_bosses:
+                        next_boss_score += BOSS_SPAWN_SCORE  # Still increment to prevent infinite spawning
+                        break
+                    
+                    # Validate constants
+                    if BOSS_SPAWN_SCORE <= 0:
+                        break
+                    
+                    # Create boss with error handling
+                    boss = BossAsteroid(bosses_spawned)
+                    if boss and hasattr(boss, 'position'):  # Verify boss was created successfully
+                        bosses_spawned += 1
+                        next_boss_score += BOSS_SPAWN_SCORE
+                        
+                        # Play boss spawn sound safely on dedicated channel
+                        try:
+                            if asteroid_sounds and asteroid_sounds.get("bossteroid"):
+                                boss_channel.stop()  # Stop any current boss sound
+                                boss_channel.play(asteroid_sounds["bossteroid"])
+                        except Exception as e:
+                            pass
+                        
+                        # Modify asteroid spawn rate when first boss spawns
+                        if bosses_spawned == 1 and hasattr(asteroid_field, 'spawn_rate'):
+                            try:
+                                if BOSS_ASTEROID_SPAWN_MODIFIER > 0 and BOSS_ASTEROID_SPAWN_MODIFIER < 2:
+                                    asteroid_field.spawn_rate = asteroid_field.spawn_rate * BOSS_ASTEROID_SPAWN_MODIFIER
+                            except Exception as e:
+                                pass
+                    else:
+                        next_boss_score += BOSS_SPAWN_SCORE  # Skip this spawn threshold
+                        break
+                        
+                except Exception as e:
+                    next_boss_score += BOSS_SPAWN_SCORE  # Skip this spawn threshold
+                    break
             
-            # Track boss defeats - check if any bosses were killed this frame
-            current_boss_count = len(boss_asteroids)
-            if current_boss_count < (bosses_spawned - bosses_defeated):
-                # One or more bosses were defeated
-                num_defeated = (bosses_spawned - bosses_defeated) - current_boss_count
-                bosses_defeated += num_defeated
-                player.lives += BOSS_LIVES_REWARD * num_defeated
-                lives_gained += BOSS_LIVES_REWARD * num_defeated
-                background.set_scroll_direction(lives_gained)
+            # Track boss defeats - check if any bosses were killed this frame with validation
+            try:
+                current_boss_count = len(boss_asteroids) if boss_asteroids else 0
+                expected_alive = max(0, bosses_spawned - bosses_defeated)
                 
-            # Restore normal asteroid spawn rate when all bosses are defeated
-            if bosses_spawned > 0 and current_boss_count == 0 and asteroid_field.spawn_rate < ASTEROID_SPAWN_RATE:
-                asteroid_field.spawn_rate = ASTEROID_SPAWN_RATE
+                if current_boss_count < expected_alive:
+                    # One or more bosses were defeated
+                    num_defeated = expected_alive - current_boss_count
+                    
+                    # Validate defeat count is reasonable
+                    if num_defeated > 0 and num_defeated <= 10:  # Sanity check
+                        bosses_defeated += num_defeated
+                        
+                        # Award lives safely
+                        if BOSS_LIVES_REWARD > 0 and BOSS_LIVES_REWARD <= 5:  # Reasonable reward
+                            lives_reward = BOSS_LIVES_REWARD * num_defeated
+                            player.lives += lives_reward
+                            lives_gained += lives_reward
+                            
+                            # Update background scroll direction safely
+                            try:
+                                background.set_scroll_direction(lives_gained)
+                            except Exception as e:
+                                pass
+                    else:
+                        # Reset tracking to prevent issues
+                        bosses_defeated = bosses_spawned - current_boss_count
+                
+                # Restore normal asteroid spawn rate when all bosses are defeated
+                if (bosses_spawned > 0 and current_boss_count == 0 and 
+                    hasattr(asteroid_field, 'spawn_rate') and 
+                    asteroid_field.spawn_rate < ASTEROID_SPAWN_RATE):
+                    try:
+                        asteroid_field.spawn_rate = ASTEROID_SPAWN_RATE
+                    except Exception as e:
+                        pass
+                        
+            except Exception as e:
+                pass
             
             # Ring charge accumulation - drop ring charge powerups at score thresholds
             while score >= next_ring_charge_score:
@@ -295,8 +356,10 @@ def main():
             # Handle regular powerup collection
             for pu in list(powerups):
                 if player.crash_check(pu):
+                    print(f"Collecting {pu.kind} powerup")
                     player.add_powerup(pu.kind)
                     pu.kill()
+                    print(f"Powerup killed, remaining powerups: {len(powerups)}")
             
             # Handle ring charge powerup collection
             for rc in list(ring_charge_powerups):
@@ -486,6 +549,16 @@ def main():
             
             ring_surf = font.render(ring_text, True, ring_color)
             screen.blit(ring_surf, (10, 10 + score_surf.get_height() + lives_surf.get_height() + bosses_surf.get_height() + dash_surf.get_height() + 16))
+            
+            # Powerup timers display (for debugging)
+            y_offset = 10 + score_surf.get_height() + lives_surf.get_height() + bosses_surf.get_height() + dash_surf.get_height() + ring_surf.get_height() + 20
+            for powerup_name, timer in player.powerups.items():
+                if timer > 0:
+                    powerup_color = (255, 100, 100) if powerup_name == "rapid_fire" else (100, 100, 255)
+                    powerup_text = f"{powerup_name}: {timer:.1f}s"
+                    powerup_surf = font.render(powerup_text, True, powerup_color)
+                    screen.blit(powerup_surf, (10, y_offset))
+                    y_offset += powerup_surf.get_height() + 4
             
             # Boss HP bar(s) at top center - show all active bosses
             if len(boss_asteroids) > 0:

@@ -1,6 +1,8 @@
 Asteroids sound effects by: https://pixabay.com/users/yodguard-12455005/
 Background music by: https://alkakrab.itch.io/
 Laser sound effects by: https://pixabay.com/users/freesound_community-46691455/?utm_source=link-attribution&utm_medium=referral&utm_campaign=music&utm_content=104024
+Laser sound effects by: https://pixabay.com/users/r0t0r-34451638/
+
 
 
 sound effects converted to .ogg for better compression, originally .mp3

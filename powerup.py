@@ -15,6 +15,7 @@ class PowerUp(pygame.sprite.Sprite):
         self.vel = pygame.Vector2(velocity) if velocity else pygame.Vector2(0, 0)
         self.radius = POWERUP_RADIUS  # For crash_check compatibility
         self.t = 0.0
+        self.drift_time = 0.0  # Track time drifting across screen
 
     def __build_image(self, kind):
         # Color scheme based on power-up type
@@ -56,21 +57,24 @@ class PowerUp(pygame.sprite.Sprite):
         self.pos += self.vel * dt
         self.position = self.pos  # Keep position synced for crash_check
 
-        # gentle bob
+        # Track drift time
+        self.drift_time += dt
+        
+        # Kill powerup if drift duration exceeded
+        if self.drift_time >= POWERUP_DRIFT_DURATION:
+            self.kill()
+            return
 
+        # gentle bob
         self.t += dt
         bob = math.sin(self.t * 3.0) * 2.0
 
-        # screen wrap
+        # Kill powerup if it goes off-screen (hits edge)
         margin = POWERUP_RADIUS + 10
-        if self.pos.x < -margin:
-            self.pos.x = SCREEN_WIDTH + margin
-        elif self.pos.x > SCREEN_WIDTH + margin:
-            self.pos.x = -margin
-        if self.pos.y < -margin:
-            self.pos.y = SCREEN_HEIGHT + margin
-        elif self.pos.y > SCREEN_HEIGHT + margin:
-            self.pos.y = -margin
+        if (self.pos.x < -margin or self.pos.x > SCREEN_WIDTH + margin or
+            self.pos.y < -margin or self.pos.y > SCREEN_HEIGHT + margin):
+            self.kill()
+            return
         
         self.rect.center = (int(self.pos.x), int(self.pos.y + bob))
     

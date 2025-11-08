@@ -42,14 +42,6 @@ Thumbs.db
 # Don't ignore workflow files
 !.github/workflows/
 
-# Developer instruction files (not needed in repo)
-build_instructions.md
-QUICKSTART.md
-setup_runner.sh
+# Dev helpers
 .github/CICD_GUIDE.md
-
-# Build scripts (users can get from releases or use CI/CD)
-build_linux.sh
-build_macos.sh
-build_windows.bat
-build_web.sh
+run_game.sh

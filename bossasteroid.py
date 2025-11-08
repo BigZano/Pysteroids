@@ -53,6 +53,7 @@ class IceTrail(pygame.sprite.Sprite):
 class BossAsteroid(CircleShape):
     """Large boss asteroid with ice trail and scaling HP"""
     sounds = {}
+    boss_channel = None
     
     def __init__(self, boss_number):
         # Calculate HP with cumulative square root growth
@@ -85,20 +86,36 @@ class BossAsteroid(CircleShape):
     def update(self, dt):
         self.position += self.velocity * dt
         
-        # Screen wrap with direction change
-        margin = BOSS_RADIUS + 10
+        # Bounce off screen edges when center hits the edge
+        bounced = False
         
-        # Horizontal wrapping
-        if self.position.x < -margin or self.position.x > SCREEN_WIDTH + margin:
-            self.position.x = SCREEN_WIDTH + margin if self.position.x < -margin else -margin
-            direction = pygame.Vector2(-1, 0) if self.position.x > SCREEN_WIDTH else pygame.Vector2(1, 0)
-            self.velocity = direction.rotate(random.uniform(-60, 60)) * BOSS_SPEED
+        # Horizontal bouncing (center hits left/right edges)
+        if self.position.x <= 0 or self.position.x >= SCREEN_WIDTH:
+            # Clamp position to screen bounds
+            self.position.x = max(0, min(SCREEN_WIDTH, self.position.x))
+            # Reverse X velocity and add randomness
+            self.velocity.x = -self.velocity.x
+            # Add random deflection
+            random_angle = random.uniform(-45, 45)
+            self.velocity = self.velocity.rotate(random_angle)
+            # Ensure minimum speed
+            if self.velocity.length() < BOSS_SPEED * 0.8:
+                self.velocity = self.velocity.normalize() * BOSS_SPEED
+            bounced = True
         
-        # Vertical wrapping
-        if self.position.y < -margin or self.position.y > SCREEN_HEIGHT + margin:
-            self.position.y = SCREEN_HEIGHT + margin if self.position.y < -margin else -margin
-            direction = pygame.Vector2(0, 1) if self.position.y > SCREEN_HEIGHT else pygame.Vector2(0, -1)
-            self.velocity = direction.rotate(random.uniform(-60, 60)) * BOSS_SPEED
+        # Vertical bouncing (center hits top/bottom edges)
+        if self.position.y <= 0 or self.position.y >= SCREEN_HEIGHT:
+            # Clamp position to screen bounds
+            self.position.y = max(0, min(SCREEN_HEIGHT, self.position.y))
+            # Reverse Y velocity and add randomness
+            self.velocity.y = -self.velocity.y
+            # Add random deflection if we haven't already bounced this frame
+            if not bounced:
+                random_angle = random.uniform(-45, 45)
+                self.velocity = self.velocity.rotate(random_angle)
+                # Ensure minimum speed
+                if self.velocity.length() < BOSS_SPEED * 0.8:
+                    self.velocity = self.velocity.normalize() * BOSS_SPEED
         
         # Leave ice trail
         self.trail_timer += dt
@@ -124,11 +141,7 @@ class BossAsteroid(CircleShape):
         
     def split(self):
         """Destroy boss and drop powerups"""
-        # Play boss destruction sound
-        if self.sounds:
-            sound = self.sounds.get("bossteroid")
-            if sound:
-                sound.play()
+        # No sound on boss death - only visual/gameplay effects
         
         # Drop 3 powerups with higher ring charge chance
         for _ in range(3):

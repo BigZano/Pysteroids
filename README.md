@@ -37,8 +37,8 @@ A modern take on the classic Asteroids arcade game, built with Python and Pygame
 
 ## 🎨 Power-ups
 
-- **Rapid Fire** (Red): Faster shot cooldown for 10 seconds
-- **Spread Shot** (Blue): Fire 5 bullets in a spread pattern for 10 seconds
+- **Rapid Fire** (Red): Faster shot cooldown for 3 seconds
+- **Spread Shot** (Blue): Fire 5 bullets in a spread pattern for 3 seconds
 - **Ring Charge** (Gold): Adds a ring blast charge (max 3)
 
 ## 🔊 Audio
@@ -77,7 +77,7 @@ If you want to run from source code:
 
 ## 📄 License
 
-[Choose your license - MIT, GPL, All Rights Reserved, etc.]
+Just play and enjoy. Tell folks where you got it, and if you feel super strongly you can support me on itch.io :)
 
 ## 🐛 Bug Reports
 

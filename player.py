@@ -29,6 +29,7 @@ class Player(CircleShape):
 
     def add_powerup(self, kind):
         if kind in self.powerups:
+            from constants import POWERUP_DURATION  # Ensure fresh import
             self.powerups[kind] = POWERUP_DURATION
     
     def current_fire_delay(self):
@@ -52,7 +53,9 @@ class Player(CircleShape):
             self.dash_cooldown -= dt
         
         for powerup in self.powerups:
+            old_value = self.powerups[powerup]
             self.powerups[powerup] = max(0.0, self.powerups[powerup] - dt)
+            # Powerup timer decremented each frame
 
         # Movement
         if keys[pygame.K_w]:

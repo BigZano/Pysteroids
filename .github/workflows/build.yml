@@ -109,3 +109,21 @@ jobs:
         generate_release_notes: true
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+    
+    - name: Install butler
+      run: |
+        curl -L -o butler.zip https://broth.itch.ovh/butler/linux-amd64/LATEST/archive/default
+        unzip butler.zip
+        chmod +x butler
+    
+    - name: Push to itch.io - Linux
+      run: |
+        ./butler push ./artifacts/Pysteroids-Linux-x64.tar.gz bigzano/pysteroids:linux --userversion=${GITHUB_REF#refs/tags/v}
+      env:
+        BUTLER_API_KEY: ${{ secrets.BUTLER_API_KEY }}
+    
+    - name: Push to itch.io - Windows
+      run: |
+        ./butler push ./artifacts/Pysteroids-Windows-x64.zip bigzano/pysteroids:windows --userversion=${GITHUB_REF#refs/tags/v}
+      env:
+        BUTLER_API_KEY: ${{ secrets.BUTLER_API_KEY }}
