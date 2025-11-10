@@ -178,11 +178,9 @@ def main():
             screen = pygame.display.set_mode((const.SCREEN_WIDTH, const.SCREEN_HEIGHT))
             menu.screen = screen  # Update menu's screen reference
         
-        # Show ship selection menu
-        selected_ship = menu.show_ship_select()
-        if selected_ship is None:
-            # User cancelled, return to main menu
-            continue
+        # Reload save data to get current ship (may have changed in unlockables menu)
+        save_data = load_game_data()
+        selected_ship = save_data['current_ship']
 
         # Reset everything for new game
         reset_game()

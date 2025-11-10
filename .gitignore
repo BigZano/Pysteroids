@@ -16,6 +16,9 @@ build/
 dist/
 *.spec.backup
 
+# Save data
+pysteroids_save.json
+
 # Backup files
 *.py.backup
 *.backup
@@ -42,6 +45,11 @@ Thumbs.db
 # Don't ignore workflow files
 !.github/workflows/
 
-# Dev helpers
+# Dev helpers (old script)
 .github/CICD_GUIDE.md
 run_game.sh
+
+# Allow setup scripts for users
+!setup_and_run.sh
+!setup_and_run.bat
+!setup_and_run.ps1

@@ -1,4 +1,4 @@
-# 🎮 PYSTEROIDS
+# PYSTEROIDS
 
 A modern take on the classic Asteroids arcade game, built with Python and Pygame!
 
@@ -12,7 +12,7 @@ A modern take on the classic Asteroids arcade game, built with Python and Pygame
 - **Progressive Difficulty**: Asteroids spawn faster as you progress
 - **Multiple Resolutions**: Play in 720p or 1080p
 
-## 🎯 How to Play
+## How to Play
 
 ### Controls
 - **WASD**: Move your ship
@@ -28,48 +28,81 @@ A modern take on the classic Asteroids arcade game, built with Python and Pygame
 - Boss asteroids reward you with extra lives when defeated
 - Small asteroids are worth more points!
 
-## 📊 Scoring
+## Scoring
 
 - **Small Asteroid**: 500 points
 - **Medium/Large Asteroid**: 100 points
 - **Bonus Life**: Every 10,000 points
 - **Boss Defeated**: 2 extra lives + powerups
 
-## 🎨 Power-ups
+## Power-ups
 
 - **Rapid Fire** (Red): Faster shot cooldown for 3 seconds
 - **Spread Shot** (Blue): Fire 5 bullets in a spread pattern for 3 seconds
 - **Ring Charge** (Gold): Adds a ring blast charge (max 3)
 
-## 🔊 Audio
+## Audio
 
 - Dynamic background music
 - Sound effects for shots, asteroid destruction, and boss battles
 - Volume controls in settings menu
 
-## 💾 System Requirements
+## System Requirements
 
 ### Minimum
-- **My brother it will run on a potato if it has python**
+- *My brother it will run on a potato if it has python*
 
 ### Recommended
-- **It is recommended that you play with a monitor and computer**
+- *It is recommended that you play with a monitor and computer*
 
-## 🚀 Running from Source
+## Running from Source
 
-If you want to run from source code:
+### Easy Setup (Recommended)
 
-1. Install Python 3.10 or higher
-2. Install dependencies:
-   ```bash
-   pip install -r requirements.txt
-   ```
-3. Run the game:
-   ```bash
-   python main.py
-   ```
+***You will need Python installed to run from source. Please visit https://www.python.org/downloads/ to download the correct version for your system.***
 
-## 📜 Credits
+**Windows:**
+- Double-click `setup_and_run.bat`
+- OR run `setup_and_run.ps1` in PowerShell
+
+**Linux/macOS:**
+```bash
+./setup_and_run.sh
+```
+
+These scripts will automatically:
+1. Create a virtual environment
+2. Install all dependencies
+3. Run the game
+
+### Manual Setup
+
+If you want to run from source code manually:
+
+1. Clone the repository
+```bash
+git clone https://github.com/BigZano/Pysteroids.git
+cd Pysteroids
+```
+
+2. Create virtual environment (optional but recommended)
+```bash
+python -m venv env
+source env/bin/activate  # Linux/macOS
+env\Scripts\activate     # Windows
+```
+
+3. Install dependencies
+```bash
+pip install -r requirements.txt
+```
+
+4. Run the game
+```
+python main.py
+```
+
+## Credits
 
 **Development**: bigzano
 **Engine**: Python + Pygame
@@ -81,7 +114,7 @@ Just play and enjoy. Tell folks where you got it, and if you feel super strongly
 
 ## 🐛 Bug Reports
 
-Found a bug? Please report it on [https://github.com/bigzano]
+Found a bug? Please report it on [https://github.com/bigzano] and submit a pull request
 
 ## 🎮 Version History
 

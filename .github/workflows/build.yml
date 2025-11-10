@@ -74,8 +74,40 @@ jobs:
         path: dist/Pysteroids-Windows-x64.zip
         retention-days: 30
 
+  build-macos:
+    runs-on: macos-latest
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+    
+    - name: Set up Python
+      uses: actions/setup-python@v5
+      with:
+        python-version: '3.10'
+    
+    - name: Install dependencies
+      run: |
+        python -m pip install --upgrade pip
+        pip install -r requirements.txt
+        pip install pyinstaller
+    
+    - name: Build macOS executable
+      run: |
+        pyinstaller Pysteroids.spec
+        cd dist
+        # Create a DMG or ZIP for distribution
+        zip -r Pysteroids-macOS-x64.zip Pysteroids.app
+    
+    - name: Upload macOS artifact
+      uses: actions/upload-artifact@v4
+      with:
+        name: Pysteroids-macOS-x64
+        path: dist/Pysteroids-macOS-x64.zip
+        retention-days: 30
+
   create-release:
-    needs: [build-linux, build-windows]
+    needs: [build-linux, build-windows, build-macos]
     runs-on: ubuntu-latest
     if: startsWith(github.ref, 'refs/tags/v')
     
@@ -98,12 +130,19 @@ jobs:
         name: Pysteroids-Windows-x64
         path: ./artifacts
     
+    - name: Download macOS artifact
+      uses: actions/download-artifact@v4
+      with:
+        name: Pysteroids-macOS-x64
+        path: ./artifacts
+    
     - name: Create Release
       uses: softprops/action-gh-release@v1
       with:
         files: |
           ./artifacts/Pysteroids-Linux-x64.tar.gz
           ./artifacts/Pysteroids-Windows-x64.zip
+          ./artifacts/Pysteroids-macOS-x64.zip
         draft: false
         prerelease: false
         generate_release_notes: true
@@ -127,3 +166,10 @@ jobs:
         ./butler push ./artifacts/Pysteroids-Windows-x64.zip bigzano/pysteroids:windows --userversion=${GITHUB_REF#refs/tags/v}
       env:
         BUTLER_API_KEY: ${{ secrets.BUTLER_API_KEY }}
+    
+    - name: Push to itch.io - macOS
+      run: |
+        ./butler push ./artifacts/Pysteroids-macOS-x64.zip bigzano/pysteroids:macos --userversion=${GITHUB_REF#refs/tags/v}
+      env:
+        BUTLER_API_KEY: ${{ secrets.BUTLER_API_KEY }}
+

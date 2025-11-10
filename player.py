@@ -335,3 +335,54 @@ class Player(CircleShape):
             points.append(self.position + inner)
         
         return points
+    
+    @staticmethod
+    def draw_ship_preview(screen, ship_obj):
+        """Static method to draw a ship preview in menus"""
+        # Get shape points based on ship shape
+        shape = ship_obj.shape
+        position = ship_obj.position
+        rotation = ship_obj.rotation
+        radius = ship_obj.radius
+        color = ship_obj.color
+        
+        points = []
+        forward = pygame.Vector2(0, 1).rotate(rotation)
+        right = pygame.Vector2(0, 1).rotate(rotation + 90)
+        
+        if shape == "triangle":
+            a = position + forward * radius
+            b = position - forward * radius - right * radius / 1.5
+            c = position - forward * radius + right * radius / 1.5
+            points = [a, b, c]
+        elif shape == "arrow":
+            tip = position + forward * radius * 1.3
+            left_wing = position - forward * radius * 0.3 - right * radius * 0.8
+            tail = position - forward * radius
+            right_wing = position - forward * radius * 0.3 + right * radius * 0.8
+            points = [tip, left_wing, tail, right_wing]
+        elif shape == "diamond":
+            front = position + forward * radius
+            left = position - right * radius * 1.2
+            back = position - forward * radius
+            right_p = position + right * radius * 1.2
+            points = [front, left, back, right_p]
+        elif shape == "needle":
+            tip = position + forward * radius * 1.5
+            left = position - forward * radius * 0.5 - right * radius * 0.4
+            back = position - forward * radius
+            right_p = position - forward * radius * 0.5 + right * radius * 0.4
+            points = [tip, left, back, right_p]
+        elif shape == "star":
+            for i in range(5):
+                # Outer point
+                angle = rotation + (i * 72)
+                outer = pygame.Vector2(0, 1).rotate(angle) * radius
+                points.append(position + outer)
+                # Inner point
+                angle = rotation + (i * 72 + 36)
+                inner = pygame.Vector2(0, 1).rotate(angle) * (radius * 0.5)
+                points.append(position + inner)
+        
+        if points:
+            pygame.draw.polygon(screen, color, points, 2)

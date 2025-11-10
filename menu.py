@@ -661,7 +661,7 @@ class Menu:
         
         # Define menu structure
         if menu_type == "initial":
-            buttons = ["Play", "Settings", "Controls", "Exit"]
+            buttons = ["Play", "Unlockables", "Settings", "Controls", "Exit"]
             y_start = 80
             show_title = True
         elif menu_type == "pause":
@@ -694,11 +694,13 @@ class Menu:
                             
                             if i == 0:  # Play/Resume/Restart
                                 waiting = False
-                            elif i == 1:  # Settings
+                            elif menu_type == "initial" and i == 1:  # Unlockables (initial menu only)
+                                self.show_unlockables_menu(background)
+                            elif (menu_type == "initial" and i == 2) or (menu_type != "initial" and i == 1):  # Settings
                                 self.show_settings_menu(background)
-                            elif i == 2:  # Controls
+                            elif (menu_type == "initial" and i == 3) or (menu_type != "initial" and i == 2):  # Controls
                                 self.show_controls_menu(background)
-                            elif i == 3:  # Exit
+                            elif (menu_type == "initial" and i == 4) or (menu_type != "initial" and i == 3):  # Exit
                                 pygame.quit()
                                 exit()
                             break
@@ -745,6 +747,37 @@ class Menu:
         if menu_type == "initial":
             return self.selected_resolution
         return None
+    
+    def show_unlockables_menu(self, background=None):
+        """Show unlockables menu where players can browse and equip ships"""
+        from ship_select_menu import ShipSelectMenu
+        
+        ship_menu = ShipSelectMenu(
+            menu_background=self.menu_background if background is None else background,
+            click_sound=self.click_sound,
+            mode="browse"  # Browse mode - doesn't start game, just equips
+        )
+        
+        clock = pygame.time.Clock()
+        
+        while True:
+            dt = clock.tick(60) / 1000.0
+            
+            # Update background
+            if background:
+                background.update(dt)
+            else:
+                self.menu_background.update(dt)
+            
+            for event in pygame.event.get():
+                self._handle_common_events(event)
+                
+                result = ship_menu.handle_event(event)
+                if result == 'main_menu':
+                    return  # Return to main menu
+            
+            ship_menu.draw(self.screen)
+            pygame.display.flip()
     
     def show_ship_select(self):
         """Show ship selection screen and return selected ship or None if cancelled"""

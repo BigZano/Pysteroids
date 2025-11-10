@@ -1,7 +1,35 @@
 import json
 import os
+import sys
+from pathlib import Path
 
-SAVE_FILE = 'pysteroids_save.json'
+def get_save_directory():
+    """Get the appropriate directory for save files based on the platform and environment"""
+    # Check if running as a PyInstaller bundle
+    if getattr(sys, 'frozen', False):
+        # Running as compiled executable - use user data directory
+        if sys.platform == 'win32':
+            # Windows: AppData/Roaming/Pysteroids
+            base_path = os.getenv('APPDATA')
+            save_dir = os.path.join(base_path, 'Pysteroids')
+        elif sys.platform == 'darwin':
+            # macOS: ~/Library/Application Support/Pysteroids
+            base_path = os.path.expanduser('~/Library/Application Support')
+            save_dir = os.path.join(base_path, 'Pysteroids')
+        else:
+            # Linux: ~/.local/share/pysteroids
+            base_path = os.getenv('XDG_DATA_HOME', os.path.expanduser('~/.local/share'))
+            save_dir = os.path.join(base_path, 'pysteroids')
+        
+        # Create directory if it doesn't exist
+        Path(save_dir).mkdir(parents=True, exist_ok=True)
+        return save_dir
+    else:
+        # Running from source - use current directory
+        return os.path.abspath(".")
+
+SAVE_DIR = get_save_directory()
+SAVE_FILE = os.path.join(SAVE_DIR, 'pysteroids_save.json')
 
 def load_game_data():
     """Load game state from a JSON file."""
@@ -32,6 +60,9 @@ def load_game_data():
 def save_game_data(data):
     """Save game state to JSON file."""
     try:
+        # Ensure save directory exists
+        Path(SAVE_DIR).mkdir(parents=True, exist_ok=True)
+        
         with open(SAVE_FILE, 'w') as f:
             json.dump(data, f, indent=2)
         return True
