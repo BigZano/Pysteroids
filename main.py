@@ -372,47 +372,60 @@ def main():
             # Respawn invincibility timer
             invincible_timer = max(0.0, invincible_timer - dt)
 
-            # Player vs asteroid collisions if not invincible and not dash-invincible
+            # Player vs asteroid collisions if not invincible and not dash-invincible and not stealthed
             is_dash_invincible = player.is_invincible_dash() if hasattr(player, 'is_invincible_dash') else False
-            if invincible_timer <= 0.0 and not is_dash_invincible:
+            is_invisible = player.is_invisible() if hasattr(player, 'is_invisible') else False
+            if invincible_timer <= 0.0 and not is_dash_invincible and not is_invisible:
                 for asteroid in asteroids:
                     if player.crash_check(asteroid):
-                        lives_left = player.lives - 1
-                        if lives_left < 0:
-                            menu.show_game_over_menu(background)
-                            # Apply volume settings after game over
-                            menu.apply_volumes(laser_sound, rapid_fire_sound, shotgun_sound, asteroid_sounds, click_sound)
-                            # Update screen reference in case resolution changed
-                            screen = menu.screen
-                            playing = False  # Exit to restart
-                            break
-                        else:
-                            # Respawn in center with remaining lives and invincibility
-                            player.kill()
-                            player = Player(const.SCREEN_WIDTH // 2, const.SCREEN_HEIGHT // 2)
-                            player.lives = lives_left
-                            # Reassign class-level sound references
-                            Player.laser_sound = laser_sound
-                            Player.laser_channel = laser_channel
-                            Player.rapid_fire_sound = rapid_fire_sound
-                            Player.shotgun_sound = shotgun_sound
-                            invincible_timer = 1.5
-                            # Reset ring charges on death
-                            ring_manager.reset()
-                            next_ring_charge_score = score + RING_CHARGE_SCORE
+                        # Check if shield absorbed the damage
+                        damage_taken = True
+                        if hasattr(player, 'take_damage'):
+                            damage_taken = player.take_damage()
+                        
+                        if damage_taken:
+                            lives_left = player.lives - 1
+                            if lives_left < 0:
+                                menu.show_game_over_menu(background)
+                                # Apply volume settings after game over
+                                menu.apply_volumes(laser_sound, rapid_fire_sound, shotgun_sound, asteroid_sounds, click_sound)
+                                # Update screen reference in case resolution changed
+                                screen = menu.screen
+                                playing = False  # Exit to restart
+                                break
+                            else:
+                                # Respawn in center with remaining lives and invincibility
+                                player.kill()
+                                player = Player(const.SCREEN_WIDTH // 2, const.SCREEN_HEIGHT // 2)
+                                player.lives = lives_left
+                                # Reassign class-level sound references
+                                Player.laser_sound = laser_sound
+                                Player.laser_channel = laser_channel
+                                Player.rapid_fire_sound = rapid_fire_sound
+                                Player.shotgun_sound = shotgun_sound
+                                invincible_timer = 1.5
+                                # Reset ring charges on death
+                                ring_manager.reset()
+                                next_ring_charge_score = score + RING_CHARGE_SCORE
                         break
                 
                 # Ice trail damage
                 for trail in ice_trails:
                     if player.crash_check(trail) and trail.can_damage():
-                        lives_left = player.lives - 1
-                        if lives_left < 0:
-                            menu.show_game_over_menu(background)
-                            # Apply volume settings after game over
-                            menu.apply_volumes(laser_sound, rapid_fire_sound, shotgun_sound, asteroid_sounds, click_sound)
-                            # Update screen reference in case resolution changed
-                            screen = menu.screen
-                            playing = False
+                        # Check if shield absorbed the damage
+                        damage_taken = True
+                        if hasattr(player, 'take_damage'):
+                            damage_taken = player.take_damage()
+                        
+                        if damage_taken:
+                            lives_left = player.lives - 1
+                            if lives_left < 0:
+                                menu.show_game_over_menu(background)
+                                # Apply volume settings after game over
+                                menu.apply_volumes(laser_sound, rapid_fire_sound, shotgun_sound, asteroid_sounds, click_sound)
+                                # Update screen reference in case resolution changed
+                                screen = menu.screen
+                                playing = False
                             break
                         else:
                             player.kill()

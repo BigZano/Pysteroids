@@ -70,3 +70,82 @@ RING_CHARGE_1_BOSS_DAMAGE = 20
 RING_CHARGE_2_BOSS_DAMAGE = 60
 RING_CHARGE_3_BOSS_DAMAGE = 100
 RING_EXPANSION_SPEED = 1500  # pixels per second
+
+# Shield settings
+SHIELD_MAX_HITS = 3
+SHIELD_COOLDOWN = 30.0  # 30 second recharge
+SHIELD_DURATION = 999999  # Effectively infinite until hits depleted
+
+# Stealth settings
+STEALTH_DURATION = 5.0  # 5 seconds of invisibility
+STEALTH_COOLDOWN = 20.0  # 20 second recharge
+
+# Weird shot settings
+WEIRD_SHOT_RADIUS = 30  # Smaller than full ring blast
+WEIRD_SHOT_SPEED = 300  # Speed it travels across screen
+WEIRD_SHOT_EXPANSION_SPEED = 200  # How fast it expands
+WEIRD_SHOT_MAX_RADIUS = 60  # Maximum size
+WEIRD_SHOT_COOLDOWN = 2.0  # 2 second cooldown
+
+
+
+# Ship unlocks
+SHIP_UNLOCKS = {
+    "default": 0,
+    "fast git": 50000,
+    "big git": 100000,
+    "sneaky git": 200000,
+    "weird boy": 300000
+}
+
+
+# ship stats
+SHIP_STATS = {
+    "default": {
+        "turn_speed": PLAYER_TURN_SPEED,
+        "acceleration": PLAYER_ACCELERATION,
+        "max_speed": PLAYER_MAX_SPEED,
+        "shot_speed": PLAYER_SHOT_SPEED,
+        "color": (255, 255, 255),
+        "shape": "triangle"
+    },
+    "fast git": {
+        "turn_speed": PLAYER_TURN_SPEED * 1.3,
+        "acceleration": PLAYER_ACCELERATION * 1.5,
+        "max_speed": PLAYER_MAX_SPEED * 1.4,
+        "shot_speed": PLAYER_SHOT_SPEED,
+        "color": (255, 100, 100),
+        "shape": "arrow"
+    },
+    "big git": {
+        "acceleration": PLAYER_ACCELERATION * 0.8,
+        "max_speed": PLAYER_MAX_SPEED * 0.9,
+        "turn_speed": PLAYER_TURN_SPEED * 0.9,
+        "shot_speed": PLAYER_SHOT_SPEED * 1.2,
+        "fire_rate": PLAYER_SHOT_COOLDOWN * 1.2,
+        "color": (100, 200, 255),
+        "shape": "diamond",
+        "special_ability": "shield"  # F key activates shield
+    },
+    "sneaky git": {
+        "acceleration": PLAYER_ACCELERATION * 1.2,
+        "max_speed": PLAYER_MAX_SPEED * 1.3,
+        "turn_speed": PLAYER_TURN_SPEED * 1.1,
+        "shot_speed": PLAYER_SHOT_SPEED,
+        "fire_rate": PLAYER_SHOT_COOLDOWN,
+        "color": (150, 150, 255),
+        "shape": "needle",
+        "special_ability": "stealth"  # F key activates stealth
+    },
+    "weird boy": {
+        "acceleration": PLAYER_ACCELERATION,
+        "max_speed": PLAYER_MAX_SPEED,
+        "turn_speed": PLAYER_TURN_SPEED,
+        "shot_speed": PLAYER_SHOT_SPEED * 0.8,
+        "fire_rate": PLAYER_SHOT_COOLDOWN,
+        "color": (255, 150, 255),
+        "shape": "star",
+        "special_ability": "weird_shot",  # Uses weird nova shots
+        "shot_type": "weird"  # Custom shot type
+    }
+}
