@@ -745,3 +745,32 @@ class Menu:
         if menu_type == "initial":
             return self.selected_resolution
         return None
+    
+    def show_ship_select(self):
+        """Show ship selection screen and return selected ship or None if cancelled"""
+        from ship_select_menu import ShipSelectMenu
+        
+        ship_menu = ShipSelectMenu(
+            menu_background=self.menu_background,
+            click_sound=self.click_sound
+        )
+        
+        clock = pygame.time.Clock()
+        
+        while True:
+            dt = clock.tick(60) / 1000.0
+            
+            # Update background
+            self.menu_background.update(dt)
+            
+            for event in pygame.event.get():
+                self._handle_common_events(event)
+                
+                result = ship_menu.handle_event(event)
+                if result == 'start_game':
+                    return ship_menu.save_data['current_ship']
+                elif result == 'main_menu':
+                    return None
+            
+            ship_menu.draw(self.screen)
+            pygame.display.flip()

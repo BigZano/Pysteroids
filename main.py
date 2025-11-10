@@ -16,6 +16,7 @@ from pygame import mixer
 from powerup import PowerUp
 from bossasteroid import BossAsteroid, IceTrail
 from ringblast import RingBlast, RingChargeManager, RingChargePowerUp
+from game_states import load_game_data, save_game_data, check_unlocks
 
 def resource_path(relative_path):
     """Get absolute path to resource, works for dev and for PyInstaller"""
@@ -154,6 +155,9 @@ def main():
     
     # Apply initial volume settings from menu
     menu.apply_volumes(laser_sound, rapid_fire_sound, shotgun_sound, asteroid_sounds, click_sound)
+    
+    # Load save data
+    save_data = load_game_data()
 
     # Main game loop - restarts when returning from menu
     game_running = True
@@ -173,6 +177,12 @@ def main():
             # Create new screen with updated resolution
             screen = pygame.display.set_mode((const.SCREEN_WIDTH, const.SCREEN_HEIGHT))
             menu.screen = screen  # Update menu's screen reference
+        
+        # Show ship selection menu
+        selected_ship = menu.show_ship_select()
+        if selected_ship is None:
+            # User cancelled, return to main menu
+            continue
 
         # Reset everything for new game
         reset_game()
@@ -180,13 +190,12 @@ def main():
         # Setup game state
         print(f"""Starting Asteroids!
               Screen width: {const.SCREEN_WIDTH}
-              Screen height: {const.SCREEN_HEIGHT}""")
-
-        # Create game objects
+              Screen height: {const.SCREEN_HEIGHT}
+              Selected ship: {selected_ship}""")
 
         # Create game objects
         asteroid_field = AsteroidField()
-        player = Player(const.SCREEN_WIDTH // 2, const.SCREEN_HEIGHT // 2)
+        player = Player(const.SCREEN_WIDTH // 2, const.SCREEN_HEIGHT // 2, ship_type=selected_ship)
         player.lives = PLAYER_LIVES
         background = Background()
 
@@ -469,6 +478,13 @@ def main():
                         lives_gained += 1  # Track lives gained
                         background.set_scroll_direction(lives_gained)  # Update scroll direction
                         next_bonus += BONUS_PLAYER_LIFE_SCORE
+                    
+                    # Check for ship unlocks
+                    new_unlocks = check_unlocks(score, save_data)
+                    if new_unlocks:
+                        # Could show a notification here
+                        for ship in new_unlocks:
+                            print(f"New ship unlocked: {ship}!")
             
             # Ring blast collisions
             for ring in ring_blasts:
@@ -494,6 +510,12 @@ def main():
                                 lives_gained += 1
                                 background.set_scroll_direction(lives_gained)
                                 next_bonus += BONUS_PLAYER_LIFE_SCORE
+                            
+                            # Check for ship unlocks
+                            new_unlocks = check_unlocks(score, save_data)
+                            if new_unlocks:
+                                for ship in new_unlocks:
+                                    print(f"New ship unlocked: {ship}!")
 
             screen.fill((0, 0, 0))
             background.draw(screen)
@@ -604,6 +626,11 @@ def main():
             dt = clock.tick(60) / 1000.0
             # Cap dt to prevent huge jumps after pause or lag
             dt = min(dt, 0.1)  # Max 100ms per frame
+        
+        # After game ends, update high score
+        if score > save_data['highest_score']:
+            save_data['highest_score'] = score
+            save_game_data(save_data)
 
     pygame.quit()
 
