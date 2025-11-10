@@ -1,5 +1,6 @@
 # -*- mode: python ; coding: utf-8 -*-
 from PyInstaller.utils.hooks import collect_data_files
+import sys
 
 datas = [('assets', 'assets')]
 datas += collect_data_files('pygame')
@@ -40,3 +41,16 @@ exe = EXE(
     codesign_identity=None,
     entitlements_file=None,
 )
+
+# Create .app bundle on macOS
+if sys.platform == 'darwin':
+    app = BUNDLE(
+        exe,
+        name='Pysteroids.app',
+        icon=None,
+        bundle_identifier='com.bigzano.pysteroids',
+        info_plist={
+            'NSHighResolutionCapable': 'True',
+            'LSBackgroundOnly': 'False',
+        },
+    )
