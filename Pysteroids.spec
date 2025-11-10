@@ -42,15 +42,14 @@ exe = EXE(
     entitlements_file=None,
 )
 
-# Create .app bundle on macOS
-if sys.platform == 'darwin':
-    app = BUNDLE(
-        exe,
-        name='Pysteroids.app',
-        icon=None,
-        bundle_identifier='com.bigzano.pysteroids',
-        info_plist={
-            'NSHighResolutionCapable': 'True',
-            'LSBackgroundOnly': 'False',
-        },
-    )
+# Create .app bundle on macOS (PyInstaller ignores this on other platforms)
+app = BUNDLE(
+    exe,
+    name='Pysteroids.app',
+    icon=None,
+    bundle_identifier='com.bigzano.pysteroids',
+    info_plist={
+        'NSHighResolutionCapable': 'True',
+        'LSBackgroundOnly': 'False',
+    },
+)
